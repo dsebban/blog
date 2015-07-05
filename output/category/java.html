@@ -32,7 +32,25 @@
         </address>
 <p>In <a href="http://dsebban.github.io/blog/category/java.html">Java</a>.</p>
 
-</footer><!-- /.post-info --><p>In this blog post I will talk about the perfect match Java Rx and live financial data , I will show how to abstract Interactive Brokers market data feed with a Java Rx Observable class , this will allow us to o some pretty cool stuff with the live data liek calculate live metrics.</p>                </article>
+</footer><!-- /.post-info --><p>In this blog post I will talk about the perfect match Java Rx and live financial data , I will show how to abstract Interactive Brokers market data feed with a Java Rx Observable class , this will allow us to o some pretty cool stuff with the live data liek calculate live metrics.</p>
+<p>First let s hookup IB market data feed with our marketDataService (our Rx Observables)</p>
+<div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">tickPrice</span><span class="o">(</span><span class="n">TickType</span> <span class="n">tickType</span><span class="o">,</span> <span class="kt">double</span> <span class="n">price</span><span class="o">,</span> <span class="kt">int</span> <span class="n">canAutoExecute</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span><span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">BID</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">RealTimeBidTickEvent</span> <span class="n">tick</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimeBidTickEvent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span>  <span class="n">instrument</span><span class="o">,</span> <span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">price</span><span class="o">).</span><span class="na">setScale</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">RoundingMode</span><span class="o">.</span><span class="na">UP</span><span class="o">));</span>
+                <span class="n">marketDataService</span><span class="o">.</span><span class="na">onNext</span><span class="o">(</span><span class="n">tick</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">if</span><span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">ASK</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">RealTimeAskTickEvent</span> <span class="n">tick</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimeAskTickEvent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span>  <span class="n">instrument</span><span class="o">,</span> <span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">price</span><span class="o">).</span><span class="na">setScale</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">RoundingMode</span><span class="o">.</span><span class="na">UP</span><span class="o">));</span>
+                <span class="n">marketDataService</span><span class="o">.</span><span class="na">onNext</span><span class="o">(</span><span class="n">tick</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</pre></div>
+
+
+<p>Now each time a tick arrives from IB , it will be pushed to our Obseravble , let''s have some fun and and start by aggregating our tick data into a minute data bar.</p>                </article>
             </aside><!-- /#featured -->
         <section id="extras" class="body">
                 <div class="social">
