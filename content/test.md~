@@ -57,7 +57,7 @@ Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now
     }
 
 ### 3. Running the minute bar aggregator against IB demo feed
-just follow the instructions from the [github](https://github.com/dsebban/blog-post-1)
+just follow the instructions from the (github)[https://github.com/dsebban/blog-post-1]
 
 
 ```sh
