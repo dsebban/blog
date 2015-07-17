@@ -1,136 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Reactive Java</title><link href="http://dsebban.github.io/blog/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/</id><updated>2010-12-03T10:20:00+01:00</updated><entry><title>RxJava in Action with Interactive Brokers market data</title><link href="http://dsebban.github.io/blog/rxjava-in-action-with-interactive-brokers-market-data.html" rel="alternate"></link><updated>2010-12-03T10:20:00+01:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2010-12-03:blog/rxjava-in-action-with-interactive-brokers-market-data.html</id><summary type="html">&lt;p&gt;In one of my recent projects I automated a trading strategy using &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt; Java API,
- the perfect fit to handle the live and historical data and produce metrics or pass order is
-&lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;  . Reading the doc and example of RXJava can be intimidating and quite abstract , here is a hands on example of how to use it and what it can do:&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Reactive Java</title><link href="http://dsebban.github.io/blog/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/</id><updated>2015-07-17T16:20:00+02:00</updated><entry><title>Java Rx with live financial market data from IB</title><link href="http://dsebban.github.io/blog/java-rx-with-live-financial-market-data-from-ib.html" rel="alternate"></link><updated>2015-07-17T16:20:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-17:blog/java-rx-with-live-financial-market-data-from-ib.html</id><summary type="html">&lt;p&gt;In one of my recent projects I automated a trading strategy using &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt; Java API,
+ the perfect companion framework  to handle large amount if  live and historical data  is
+&lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;. 
+Reading the doc and examples of RXJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Hook up market data to the marketDataService Observable&lt;/li&gt;
-&lt;li&gt;Aggregate tick data to 1-minute bars&lt;/li&gt;
-&lt;li&gt;Calculate moving average for AAPL&lt;/li&gt;
-&lt;li&gt;Pass a buy order when moving avg below a given threshold&lt;/li&gt;
+&lt;li&gt;Aggregate tick data to 1-minute bars , using groupBy , flatmap and buffer operators&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h3&gt;1. Hook up market data to the marketDataService Observable&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt; &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;subscribeRealTimeData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Instrument&lt;/span&gt; &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-    &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;reqTopMktData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ibContract&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;232&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;ApiController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ITopMktDataHandler&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;reqTopMktData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ibContract&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;232&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;ApiController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ITopMktDataHandler&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; 
+    &lt;span class="o"&gt;{&lt;/span&gt;
         &lt;span class="nd"&gt;@Override&lt;/span&gt;
         &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;tickPrice&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TickType&lt;/span&gt; &lt;span class="n"&gt;tickType&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;double&lt;/span&gt; &lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;canAutoExecute&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-            &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tickType&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;TickType&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;BID&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-                &lt;span class="n"&gt;RealTimeBidTickEvent&lt;/span&gt; &lt;span class="n"&gt;tick&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;RealTimeBidTickEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;System&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;currentTimeMillis&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt;  &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;setScale&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;RoundingMode&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;UP&lt;/span&gt;&lt;span class="o"&gt;));&lt;/span&gt;
-                &lt;span class="n"&gt;marketDataService&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;onNext&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tick&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tickType&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;TickType&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ASK&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; 
+            &lt;span class="o"&gt;{&lt;/span&gt;
+                &lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;info&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;IB tick &amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;Date&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; price &amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+                &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt; &lt;span class="n"&gt;priceEvent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;System&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;currentTimeMillis&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt; &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;setScale&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;RoundingMode&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;UP&lt;/span&gt;&lt;span class="o"&gt;));&lt;/span&gt;
+                &lt;span class="n"&gt;marketDataObservable&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;push&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;priceEvent&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
             &lt;span class="o"&gt;}&lt;/span&gt;
-            &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tickType&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;TickType&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ASK&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-                &lt;span class="n"&gt;RealTimeAskTickEvent&lt;/span&gt; &lt;span class="n"&gt;tick&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;RealTimeAskTickEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;System&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;currentTimeMillis&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt;  &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;setScale&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;RoundingMode&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;UP&lt;/span&gt;&lt;span class="o"&gt;));&lt;/span&gt;
-                &lt;span class="n"&gt;marketDataService&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;onNext&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tick&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
-            &lt;span class="o"&gt;}&lt;/span&gt;
+
         &lt;span class="o"&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Now each time a tick arrives from IB , it will be pushed to our Obseravble , let''s have some fun and and start by aggregating our tick data into a minute data bar.&lt;/p&gt;
+&lt;p&gt;Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now we can now fold the data as we want using the different opearator of RxJava Observable&lt;/p&gt;
 &lt;h3&gt;2. Aggregate tick data to 1-minute bars&lt;/h3&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;aggregateRealTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;RealTimeTickEvent&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt; &lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Func1&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;RealTimeTickEvent&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt;&lt;span class="n"&gt;Map&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;Instrument&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;LinkedList&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;RealTimeTickEvent&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;mapFactory&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;Func2&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;RealTimeTickEvent&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt;&lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt;&lt;span class="n"&gt;HistoricalBarEvent&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;tickfactory&lt;/span&gt;&lt;span class="o"&gt;){&lt;/span&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;aggregateLiveMinuteBar&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
 
-    &lt;span class="n"&gt;LinkedList&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;RealTimeTickEvent&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;ticks&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;mapFactory&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;call&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;());&lt;/span&gt;
-
-    &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ticks&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="kc"&gt;null&lt;/span&gt;&lt;span class="o"&gt;){&lt;/span&gt;
-        &lt;span class="n"&gt;ticks&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;LinkedList&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;RealTimeTickEvent&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;();&lt;/span&gt;
-        &lt;span class="n"&gt;mapFactory&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;call&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;put&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt;&lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
-    &lt;span class="o"&gt;}&lt;/span&gt;
-
-    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;size&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-        &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getFirst&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
-        &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
-
+    &lt;span class="n"&gt;observable&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;
+            &lt;span class="n"&gt;ofType&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LivePriceEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;class&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;//filter on live ticks&lt;/span&gt;
+            &lt;span class="n"&gt;groupBy&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;LivePriceEvent:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;// group by instrument i.e AAPL, GOOG&lt;/span&gt;
+            &lt;span class="n"&gt;flatMap&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;grouped&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;grouped&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;buffer&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;)).&lt;/span&gt; &lt;span class="c1"&gt;// take each 2 consecutive events&lt;/span&gt;
+            &lt;span class="n"&gt;subscribe&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;listOf2&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
+                &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;listOf2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+                &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+                &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;listOf2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+        &lt;span class="c1"&gt;//when minute is crossed , we push the result back in the observable to make it available to other subscribers&lt;/span&gt;
         &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-            &lt;span class="n"&gt;BigDecimal&lt;/span&gt; &lt;span class="n"&gt;avg&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;stream&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;map&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;RealTimeTickEvent:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;getPrice&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;reduce&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;BigDecimal:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;add&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;divide&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;size&lt;/span&gt;&lt;span class="o"&gt;()),&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt;&lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ROUND_UP&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
-            &lt;span class="n"&gt;HistoricalBarEvent&lt;/span&gt; &lt;span class="n"&gt;bar&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;tickfactory&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;call&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getFirst&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt;&lt;span class="n"&gt;avg&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
-            &lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;clear&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
-            &lt;span class="n"&gt;push&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;bar&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+                    &lt;span class="n"&gt;push&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;LiveBarEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TimeUnit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;MINUTES&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;createTimestamp&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getPrice&lt;/span&gt;&lt;span class="o"&gt;()));&lt;/span&gt;
+                &lt;span class="o"&gt;}&lt;/span&gt;
 
-        &lt;span class="o"&gt;}&lt;/span&gt;
-    &lt;span class="o"&gt;}&lt;/span&gt;
-    &lt;span class="n"&gt;ticks&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;push&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+    &lt;span class="o"&gt;});&lt;/span&gt;
+
+
 &lt;span class="o"&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;h3&gt;3. Calculate moving average for AAPL&lt;/h3&gt;
-&lt;h3&gt;4. Pass a buy order when moving avg below a given threshold&lt;/h3&gt;
-&lt;p&gt;Markdown is a lightweight markup language based on the formatting conventions that people naturally use in email.  As &lt;a href="http://daringfireball.net/"&gt;John Gruber&lt;/a&gt; writes on the &lt;a href="http://daringfireball.net/projects/markdown/"&gt;Markdown site&lt;/a&gt;:&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;The overriding design goal for Markdown's
-formatting syntax is to make it as readable
-as possible. The idea is that a
-Markdown-formatted document should be
-publishable as-is, as plain text, without
-looking like it's been marked up with tags
-or formatting instructions.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;This text you see here is &lt;em&gt;actually&lt;/em&gt; written in Markdown! To get a feel for Markdown's syntax, type some text into the left window and watch the results in the right.&lt;/p&gt;
-&lt;h3&gt;Version&lt;/h3&gt;
-&lt;p&gt;3.0.0&lt;/p&gt;
-&lt;h3&gt;Tech&lt;/h3&gt;
-&lt;p&gt;Dillinger uses a number of open source projects to work properly:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;a href="http://angularjs.org"&gt;AngularJS&lt;/a&gt; - HTML enhanced for web apps!&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://ace.ajax.org"&gt;Ace Editor&lt;/a&gt; - awesome web-based text editor&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://github.com/chjj/marked"&gt;Marked&lt;/a&gt; - a super fast port of Markdown to JavaScript&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://twitter.github.com/bootstrap/"&gt;Twitter Bootstrap&lt;/a&gt; - great UI boilerplate for modern web apps&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://nodejs.org"&gt;node.js&lt;/a&gt; - evented I/O for the backend&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://expressjs.com"&gt;Express&lt;/a&gt; - fast node.js network app framework &lt;a href="http://twitter.com/tjholowaychuk"&gt;@tjholowaychuk&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://gulpjs.com"&gt;Gulp&lt;/a&gt; - the streaming build system&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://github.com/madrobby/keymaster"&gt;keymaster.js&lt;/a&gt; - awesome keyboard handler lib by &lt;a href="http://twitter.com/thomasfuchs"&gt;@thomasfuchs&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href="http://jquery.com"&gt;jQuery&lt;/a&gt; - duh&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Installation&lt;/h3&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;git clone &lt;span class="o"&gt;[&lt;/span&gt;git-repo-url&lt;span class="o"&gt;]&lt;/span&gt; dillinger
-&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;dillinger
-&lt;span class="nv"&gt;$ &lt;/span&gt;npm i -d
-&lt;span class="nv"&gt;$ &lt;/span&gt;mkdir -p public/files/&lt;span class="o"&gt;{&lt;/span&gt;md,html,pdf&lt;span class="o"&gt;}&lt;/span&gt;
-&lt;span class="nv"&gt;$ &lt;/span&gt;gulp build --prod
-&lt;span class="nv"&gt;$ NODE_ENV&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;production node app
+&lt;h3&gt;3. Running the minute bar aggregator against IB demo feed&lt;/h3&gt;
+&lt;p&gt;just follow the instructions from the &lt;a href="https://github.com/dsebban/blog-post-1"&gt;github&lt;/a&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;git clone &lt;span class="o"&gt;[&lt;/span&gt;https://github.com/dsebban/blog-post-1&lt;span class="o"&gt;]&lt;/span&gt; rx-ib
+&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;rx-ib
+&lt;span class="nv"&gt;$ &lt;/span&gt;mvn package
+&lt;span class="nv"&gt;$ &lt;/span&gt;foreman start
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;h3&gt;Plugins&lt;/h3&gt;
-&lt;p&gt;Dillinger is currently extended with the following plugins&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Dropbox&lt;/li&gt;
-&lt;li&gt;Github&lt;/li&gt;
-&lt;li&gt;Google Drive&lt;/li&gt;
-&lt;li&gt;OneDrive&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Readmes, how to use them in your own application can be found here:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;plugins/dropbox/README.md&lt;/li&gt;
-&lt;li&gt;plugins/github/README.md&lt;/li&gt;
-&lt;li&gt;plugins/googledrive/README.md&lt;/li&gt;
-&lt;li&gt;plugins/onedrive/README.md&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;Development&lt;/h3&gt;
-&lt;p&gt;Want to contribute? Great!&lt;/p&gt;
-&lt;p&gt;Dillinger uses Gulp + Webpack for fast developing.
-Make a change in your file and instantanously see your updates!&lt;/p&gt;
-&lt;p&gt;Open your favorite Terminal and run these commands.&lt;/p&gt;
-&lt;p&gt;First Tab:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;node app
-&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;you should see something like this &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1&lt;span class="nv"&gt;$ &lt;/span&gt;foreman start
 
-
-&lt;p&gt;Second Tab:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;gulp watch
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;(optional) Third:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;karma start
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;h3&gt;Todo's&lt;/h3&gt;
-&lt;p&gt;Write Tests
-Github saving overhaul
-Code Commenting
-Night Mode&lt;/p&gt;
-&lt;h2&gt;License&lt;/h2&gt;
-&lt;p&gt;MIT&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Free Software, Hell Yeah!&lt;/strong&gt;&lt;/p&gt;</summary></entry></feed>
+16:22:37 ib.1   | started with pid 29935
+16:22:37 app.1  | started with pid 29937
+16:22:47 app.1  | Server Version:76
+16:22:47 app.1  | TWS Time at connection:20150717 16:22:44 IST
+16:22:47 app.1  | Jul 17, 2015 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$2&lt;/span&gt; connected
+16:22:47 app.1  | INFO: connected
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$2&lt;/span&gt; message
+16:22:48 app.1  | SEVERE: id -1 &lt;span class="nv"&gt;errocode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; 2119msg Market data farm is connecting:ibdemo
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$2&lt;/span&gt; message
+16:22:48 app.1  | SEVERE: id -1 &lt;span class="nv"&gt;errocode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; 2104msg Market data farm connection is OK:ibdemo
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$1&lt;/span&gt; tickPrice
+16:22:48 app.1  | INFO: IB tick Fri Jul 17 16:22:48 IDT 2015 price 122.09
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$1&lt;/span&gt; tickPrice
+16:22:48 app.1  | INFO: IB tick Fri Jul 17 16:22:48 IDT 2015 price 122.08
+16:22:52 app.1  | Jul 17, 2015 4:22:52 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$1&lt;/span&gt; tickPrice
+16:22:52 app.1  | INFO: IB tick Fri Jul 17 16:22:52 IDT 2015 price 122.09
+16:22:58 app.1  | Jul 17, 2015 4:22:58 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$1&lt;/span&gt; tickPrice
+16:22:58 app.1  | INFO: IB tick Fri Jul 17 16:22:58 IDT 2015 price 122.08
+16:23:00 app.1  | Jul 17, 2015 4:23:00 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$1&lt;/span&gt; tickPrice
+16:23:00 app.1  | INFO: IB tick Fri Jul 17 16:23:00 IDT 2015 price 122.09
+16:23:00 app.1  | Jul 17, 2015 4:23:00 PM daniels.reactive.blog.Main lambda&lt;span class="nv"&gt;$main$0&lt;/span&gt;
+16:23:00 app.1  | INFO: &lt;span class="nv"&gt;minute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; 22 &lt;span class="nv"&gt;val&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;LiveBarEvent&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;barDuration&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;MINUTES, &lt;span class="nv"&gt;createTimestamp&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;1437139378855, &lt;span class="nv"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;APPL, &lt;span class="nv"&gt;price&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;122.080&lt;span class="o"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</summary></entry></feed>
