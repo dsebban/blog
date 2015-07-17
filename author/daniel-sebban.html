@@ -37,10 +37,10 @@
 <a href="https://github.com/ReactiveX/RxJava">RxJava</a>. 
 Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
 <ul>
-<li>Hook up market data to the marketDataService Observable</li>
-<li>Aggregate tick data to 1-minute bars , using groupBy , flatmap and buffer operators</li>
+<li>Feed market data to the RxJava marketDataObservable class</li>
+<li>Aggregate tick data to 1-minute bars, using groupBy, flatmap and buffer operators</li>
 </ul>
-<h3>1. Hook up market data to the marketDataService Observable</h3>
+<h3>1. Feed market data to the RxJava marketDataObservable class</h3>
 <div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span> 
     <span class="o">{</span>
@@ -58,7 +58,7 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 </pre></div>
 
 
-<p>Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
+<p>Now each time a tick arrives from IB, it will be pushed to our Obseravble. Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
 <h3>2. Aggregate tick data to 1-minute bars</h3>
 <div class="highlight"><pre><span class="kd">public</span> <span class="kt">void</span> <span class="nf">aggregateLiveMinuteBar</span><span class="o">()</span> <span class="o">{</span>
 

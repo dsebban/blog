@@ -4,10 +4,10 @@
 &lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;. 
 Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;Hook up market data to the marketDataService Observable&lt;/li&gt;
-&lt;li&gt;Aggregate tick data to 1-minute bars , using groupBy , flatmap and buffer operators&lt;/li&gt;
+&lt;li&gt;Feed market data to the RxJava marketDataObservable class&lt;/li&gt;
+&lt;li&gt;Aggregate tick data to 1-minute bars, using groupBy, flatmap and buffer operators&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3&gt;1. Hook up market data to the marketDataService Observable&lt;/h3&gt;
+&lt;h3&gt;1. Feed market data to the RxJava marketDataObservable class&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt; &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;subscribeRealTimeData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Instrument&lt;/span&gt; &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
     &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;reqTopMktData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ibContract&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;232&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;ApiController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ITopMktDataHandler&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; 
     &lt;span class="o"&gt;{&lt;/span&gt;
@@ -25,7 +25,7 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now we can now fold the data as we want using the different opearator of RxJava Observable&lt;/p&gt;
+&lt;p&gt;Now each time a tick arrives from IB, it will be pushed to our Obseravble. Now we can now fold the data as we want using the different opearator of RxJava Observable&lt;/p&gt;
 &lt;h3&gt;2. Aggregate tick data to 1-minute bars&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;aggregateLiveMinuteBar&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
 
