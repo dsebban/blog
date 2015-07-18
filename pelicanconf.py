@@ -3,8 +3,8 @@
 from __future__ import unicode_literals
 
 AUTHOR = u'Daniel Sebban'
-SITENAME = u'Reactive Java'
-SITEURL = ''
+SITENAME = u'Daniel Sebban\'s Blog'
+SITEURL = 'http://dsebban.github.io/blog'
 
 PATH = 'content'
 
@@ -12,22 +12,15 @@ TIMEZONE = 'Europe/Paris'
 
 DEFAULT_LANG = u'en'
 
-# Feed generation is usually not desired when developing
-FEED_ALL_ATOM = None
-CATEGORY_FEED_ATOM = None
-TRANSLATION_FEED_ATOM = None
-AUTHOR_FEED_ATOM = None
-AUTHOR_FEED_RSS = None
-GOOGLE_ANALYTICS = 'UA-65283210-1'
+THEME = 'pelican-themes/blue-penguin'
 
-# Blogroll
-LINKS = ()
 
-# Social widget
 SOCIAL = (
-          ('LinkedIn', 'https://www.linkedin.com/profile/view?id=14011575'),)
+          ('LinkedIn', 'https://www.linkedin.com/profile/view?id=14011575'),
+	  ('github','https://github.com/dsebban'),	
+)
 
-DEFAULT_PAGINATION = False
+ARTICLE_SAVE_AS = '{date:%Y}/{slug}.html'
+ARTICLE_URL = '{date:%Y}/{slug}.html'
 
-# Uncomment following line if you want document-relative URLs when developing
-#RELATIVE_URLS = True
+
