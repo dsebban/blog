@@ -24,21 +24,21 @@
     </header>
     <div id="wrapper">
         <div id="content">
-            <h4 class="date">Jul 17, 2015</h4>
+            <h4 class="date">Jul 20, 2015</h4>
             <article class="post">
 <h2 class="title">
-                    <a href="http://dsebban.github.io/blog/java-rx-with-live-financial-market-data-from-ib.html" rel="bookmark" title="Permanent Link to &quot;Java Rx with live financial market data from IB&quot;">Java Rx with live financial market data from IB</a>
+                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="bookmark" title="Permanent Link to &quot;RxJava in Action with live financial market data from IB (Part 1)&quot;">RxJava in Action with live financial market data from IB (Part 1)</a>
                 </h2>
 
                 <p>In one of my recent projects I automated a trading strategy using <a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;ns=T">Iteractive Brokers</a> Java API,
- the perfect companion framework  to handle large amount if  live and historical data  is
+ the perfect companion framework to handle large amount of live and historical data is
 <a href="https://github.com/ReactiveX/RxJava">RxJava</a>. 
-Reading the doc and examples of RXJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
+Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
 <ul>
-<li>Hook up market data to the marketDataService Observable</li>
-<li>Aggregate tick data to 1-minute bars , using groupBy , flatmap and buffer operators</li>
+<li>Feed market data to the RxJava marketDataObservable class</li>
+<li>Aggregate tick data to 1-minute bars, using groupBy, flatmap and buffer operators</li>
 </ul>
-<h3>1. Hook up market data to the marketDataService Observable</h3>
+<h3>1. Feed market data to the RxJava marketDataObservable class</h3>
 <div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span> 
     <span class="o">{</span>
@@ -56,13 +56,13 @@ Reading the doc and examples of RXJava can be intimidating and quite abstract, h
 </pre></div>
 
 
-<p>Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
+<p>Now each time a tick arrives from IB, it will be pushed to our Obseravble. Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
 <h3>2. Aggregate tick data to 1-minute bars</h3>
 <div class="highlight"><pre><span class="kd">public</span> <span class="kt">void</span> <span class="nf">aggregateLiveMinuteBar</span><span class="o">()</span> <span class="o">{</span>
 
     <span class="n">observable</span><span class="o">().</span>
             <span class="n">ofType</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">.</span><span class="na">class</span><span class="o">).</span> <span class="c1">//filter on live ticks</span>
-            <span class="n">groupBy</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">::</span><span class="n">getInstrument</span><span class="o">).</span> <span class="c1">// group by instrument i.e AAPL, GOOG</span>
+            <span class="n">groupBy</span><span class="o">(</span><span class="nl">LivePriceEvent:</span><span class="o">:</span><span class="n">getInstrument</span><span class="o">).</span> <span class="c1">// group by instrument i.e AAPL, GOOG</span>
             <span class="n">flatMap</span><span class="o">(</span><span class="n">grouped</span> <span class="o">-&gt;</span> <span class="n">grouped</span><span class="o">.</span><span class="na">buffer</span><span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">1</span><span class="o">)).</span> <span class="c1">// take each 2 consecutive events</span>
             <span class="n">subscribe</span><span class="o">(</span><span class="n">listOf2</span> <span class="o">-&gt;</span> <span class="o">{</span>
                 <span class="n">LivePriceEvent</span> <span class="n">lastEvent</span> <span class="o">=</span> <span class="n">listOf2</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
@@ -92,33 +92,36 @@ Reading the doc and examples of RXJava can be intimidating and quite abstract, h
 <p>you should see something like this </p>
 <div class="highlight"><pre>daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1<span class="nv">$ </span>foreman start
 
-16:22:37 ib.1   <span class="p">|</span> started with pid 29935
-16:22:37 app.1  <span class="p">|</span> started with pid 29937
-16:22:47 app.1  <span class="p">|</span> Server Version:76
-16:22:47 app.1  <span class="p">|</span> TWS Time at connection:20150717 16:22:44 IST
-16:22:47 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> connected
-16:22:47 app.1  <span class="p">|</span> INFO: connected
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
-16:22:48 app.1  <span class="p">|</span> SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2119msg Market data farm is connecting:ibdemo
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
-16:22:48 app.1  <span class="p">|</span> SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2104msg Market data farm connection is OK:ibdemo
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:48 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:48 IDT <span class="m">2015</span> price 122.09
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:48 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:48 IDT <span class="m">2015</span> price 122.08
-16:22:52 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:52 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:52 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:52 IDT <span class="m">2015</span> price 122.09
-16:22:58 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:58 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:58 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:58 IDT <span class="m">2015</span> price 122.08
-16:23:00 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:23:00 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:23:00 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:23:00 IDT <span class="m">2015</span> price 122.09
-16:23:00 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:23:00 PM daniels.reactive.blog.Main lambda<span class="nv">$main$0</span>
-16:23:00 app.1  <span class="p">|</span> INFO: <span class="nv">minute</span> <span class="o">=</span> <span class="m">22</span> <span class="nv">val</span><span class="o">=</span>LiveBarEvent<span class="o">(</span><span class="nv">barDuration</span><span class="o">=</span>MINUTES, <span class="nv">createTimestamp</span><span class="o">=</span>1437139378855, <span class="nv">instrument</span><span class="o">=</span>APPL, <span class="nv">price</span><span class="o">=</span>122.080<span class="o">)</span>
+16:22:37 ib.1   | started with pid 29935
+16:22:37 app.1  | started with pid 29937
+16:22:47 app.1  | Server Version:76
+16:22:47 app.1  | TWS Time at connection:20150717 16:22:44 IST
+16:22:47 app.1  | Jul 17, 2015 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> connected
+16:22:47 app.1  | INFO: connected
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
+16:22:48 app.1  | SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2119msg Market data farm is connecting:ibdemo
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
+16:22:48 app.1  | SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2104msg Market data farm connection is OK:ibdemo
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:48 app.1  | INFO: IB tick Fri Jul 17 16:22:48 IDT 2015 price 122.09
+16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:48 app.1  | INFO: IB tick Fri Jul 17 16:22:48 IDT 2015 price 122.08
+16:22:52 app.1  | Jul 17, 2015 4:22:52 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:52 app.1  | INFO: IB tick Fri Jul 17 16:22:52 IDT 2015 price 122.09
+16:22:58 app.1  | Jul 17, 2015 4:22:58 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:58 app.1  | INFO: IB tick Fri Jul 17 16:22:58 IDT 2015 price 122.08
+16:23:00 app.1  | Jul 17, 2015 4:23:00 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:23:00 app.1  | INFO: IB tick Fri Jul 17 16:23:00 IDT 2015 price 122.09
+16:23:00 app.1  | Jul 17, 2015 4:23:00 PM daniels.reactive.blog.Main lambda<span class="nv">$main$0</span>
+16:23:00 app.1  | INFO: <span class="nv">minute</span> <span class="o">=</span> 22 <span class="nv">val</span><span class="o">=</span>LiveBarEvent<span class="o">(</span><span class="nv">barDuration</span><span class="o">=</span>MINUTES, <span class="nv">createTimestamp</span><span class="o">=</span>1437139378855, <span class="nv">instrument</span><span class="o">=</span>APPL, <span class="nv">price</span><span class="o">=</span>122.080<span class="o">)</span>
 </pre></div>
+
+
+<h3>To be continued (Part 2 taking advantage of your multicore cpu with observeOn RxJava operator )</h3>
 
                 <div class="clear"></div>
                 <div class="info">
-                    <a href="http://dsebban.github.io/blog/java-rx-with-live-financial-market-data-from-ib.html">posted at 16:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>
+                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html">posted at 22:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>
                 </div>
 
             </article>
