@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom"><title>Daniel Sebban's Blog</title><link href="http://dsebban.github.io/blog/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/</id><updated>2015-07-20T22:20:00+02:00</updated><entry><title>RxJava in Action with live financial market data from IB (Part 1)</title><link href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="alternate"></link><updated>2015-07-20T22:20:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-20:blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html</id><summary type="html">&lt;p&gt;In one of my recent projects I automated a trading strategy using &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt; Java API,
  the perfect companion framework to handle large amount of live and historical data is
-&lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;. 
+&lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;.
 Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Feed market data to the RxJava marketDataObservable class&lt;/li&gt;
@@ -9,12 +9,12 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 &lt;/ul&gt;
 &lt;h3&gt;1. Feed market data to the RxJava marketDataObservable class&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt; &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;subscribeRealTimeData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Instrument&lt;/span&gt; &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
-    &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;reqTopMktData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ibContract&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;232&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;ApiController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ITopMktDataHandler&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; 
+    &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;reqTopMktData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ibContract&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;232&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;ApiController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ITopMktDataHandler&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt;
     &lt;span class="o"&gt;{&lt;/span&gt;
         &lt;span class="nd"&gt;@Override&lt;/span&gt;
         &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;tickPrice&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TickType&lt;/span&gt; &lt;span class="n"&gt;tickType&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;double&lt;/span&gt; &lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;canAutoExecute&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
 
-            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tickType&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;TickType&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ASK&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; 
+            &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tickType&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;TickType&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ASK&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
             &lt;span class="o"&gt;{&lt;/span&gt;
                 &lt;span class="n"&gt;log&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;info&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;IB tick &amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;Date&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="s"&gt;&amp;quot; price &amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
                 &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt; &lt;span class="n"&gt;priceEvent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;System&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;currentTimeMillis&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt; &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;BigDecimal&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;price&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;setScale&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;RoundingMode&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;UP&lt;/span&gt;&lt;span class="o"&gt;));&lt;/span&gt;
@@ -58,14 +58,15 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;you should see something like this &lt;/p&gt;
+&lt;p&gt;you should see something like this&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1&lt;span class="nv"&gt;$ &lt;/span&gt;foreman start
 
 16:22:37 ib.1   | started with pid 29935
 16:22:37 app.1  | started with pid 29937
 16:22:47 app.1  | Server Version:76
 16:22:47 app.1  | TWS Time at connection:20150717 16:22:44 IST
-16:22:47 app.1  | Jul 17, 2015 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$2&lt;/span&gt; connected
+16:22:47 app.1  | Jul 17, 2015 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$2&lt;/span&gt; connectedTags: pelican, publishing
+Slug: my-super-post
 16:22:47 app.1  | INFO: connected
 16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed&lt;span class="nv"&gt;$2&lt;/span&gt; message
 16:22:48 app.1  | SEVERE: id -1 &lt;span class="nv"&gt;errocode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; 2119msg Market data farm is connecting:ibdemo
@@ -86,4 +87,4 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;h3&gt;To be continued (Part 2 taking advantage of your multicore cpu with observeOn RxJava operator )&lt;/h3&gt;</summary></entry></feed>
+&lt;h3&gt;To be continued (Part 2 taking advantage of your multicore cpu with observeOn RxJava operator )&lt;/h3&gt;</summary><category term="java"></category><category term="RxJava"></category><category term="finance"></category></entry></feed>

@@ -1,32 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-      <meta charset="utf-8" />
-    <title>Daniel Sebban's Blog &middot; RxJava in Action with live financial market data from IB (Part 1)</title>
-    <link rel="shortcut icon" type="image/png" href="http://dsebban.github.io/blog/favicon.png">
-    <link rel="shortcut icon" type="image/x-icon" href="http://dsebban.github.io/blog/favicon.ico">
-    <link href="http://dsebban.github.io/blog/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Daniel Sebban's Blog Full Atom Feed" />
-    <link href="http://dsebban.github.io/blog/feeds/java.atom.xml" type="application/atom+xml" rel="alternate" title="Daniel Sebban's Blog Categories Atom Feed" />
-    <link rel="stylesheet" href="http://dsebban.github.io/blog/theme/css/screen.css" type="text/css" />
-    <link rel="stylesheet" href="http://dsebban.github.io/blog/theme/css/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="http://dsebban.github.io/blog/theme/css/print.css" type="text/css" media="print" />
+    <meta charset="utf-8" />
+    <title>Daniel Sebban le blog</title>
+    <link rel="shortcut icon" type="image/png" href="http://dsebban.github.io/blog/fr/favicon.png">
+    <link rel="shortcut icon" type="image/x-icon" href="http://dsebban.github.io/blog/fr/favicon.ico">
+    <link href="http://dsebban.github.io/blog/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Daniel Sebban le blog Full Atom Feed" />
+    <link rel="stylesheet" href="http://dsebban.github.io/blog/fr/theme/css/screen.css" type="text/css" />
+    <link rel="stylesheet" href="http://dsebban.github.io/blog/fr/theme/css/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="http://dsebban.github.io/blog/fr/theme/css/print.css" type="text/css" media="print" />
     <meta name="generator" content="Pelican" />
-
-
-
-    <meta name="tags" contents="java" />
-    <meta name="tags" contents="RxJava" />
-    <meta name="tags" contents="finance" />
 </head>
 <body>
     <header>
         <nav>
-                <li><a href="http://dsebban.github.io/blog">Home</a></li>
-                <li><a href="http://dsebban.github.io/blog/pages/about.html">About</a></li>
-                <li><a href="http://dsebban.github.io/blog/archives.html">Archives</a></li>
+                <li class="selected"><a href="http://dsebban.github.io/blog/fr">Home</a></li>
+                <li><a href="http://dsebban.github.io/blog/fr/pages/about.html">About</a></li>
+                <li><a href="http://dsebban.github.io/blog/fr/archives.html">Archives</a></li>
         </nav>
         <div class="header_box">
-            <h1><a href="http://dsebban.github.io/blog">Daniel Sebban's Blog</a></h1>
+            <h1><a href="http://dsebban.github.io/blog/fr">Daniel Sebban le blog</a></h1>
         </div>
     </header>
     <div id="wrapper">
@@ -34,16 +27,16 @@
             <h4 class="date">Jul 20, 2015</h4>
             <article class="post">
 <h2 class="title">
-                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="bookmark" title="Permanent Link to &quot;RxJava in Action with live financial market data from IB (Part 1)&quot;">RxJava in Action with live financial market data from IB (Part 1)</a>
+                    <a href="http://dsebban.github.io/blog/fr/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="bookmark" title="Permanent Link to &quot;RxJava in Action with live financial market data from IB (Part 1)&quot;">RxJava in Action with live financial market data from IB (Part 1)</a>
                 </h2>
 
-                <p>In one of my recent projects I automated a trading strategy using <a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;ns=T">Iteractive Brokers</a> Java API,
- the perfect companion framework to handle large amount of live and historical data is
+                <p>Dans un de mes récents projets j'ai automatisé une stratégie de trading en utilisant L'API Java <a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;ns=T">Iteractive Brokers</a>,
+ Le framework qui s'accorde aver merveille pour travailler avec des flux de donnes  en temps reel est
 <a href="https://github.com/ReactiveX/RxJava">RxJava</a>.
-Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
+Lire la doc et les examples de RxJava peu etre assez abstrait, voici un example concret de comment integrer ces deux technologies ensembles</p>
 <ul>
-<li>Feed market data to the RxJava marketDataObservable class</li>
-<li>Aggregate tick data to 1-minute bars, using groupBy, flatmap and buffer operators</li>
+<li>Connecter les donnees du marche avec la classe marketDataObservable de RxJava</li>
+<li>Aggreger les  donnees temp reel en bar d'une minute , utilisant les operateurs groupBy, flatmap et buffer.</li>
 </ul>
 <h3>1. Feed market data to the RxJava marketDataObservable class</h3>
 <div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
@@ -129,7 +122,23 @@ Slug: my-super-post
 
                 <div class="clear"></div>
                 <div class="info">
-                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html">posted at 22:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/tag/java.html" class="tags">java</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/rxjava.html" class="tags">RxJava</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/finance.html" class="tags">finance</a>
+                    <a href="http://dsebban.github.io/blog/fr/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html">posted at 22:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/fr/category/java.html" rel="tag">Java</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/fr/tag/java.html" class="tags">java</a>&nbsp;<a href="http://dsebban.github.io/blog/fr/tag/rxjava.html" class="tags">RxJava</a>&nbsp;<a href="http://dsebban.github.io/blog/fr/tag/finance.html" class="tags">finance</a>
+                </div>
+
+            </article>
+            <div class="clear"></div>
+            <h4 class="date">Feb 06, 2014</h4>
+            <article class="post">
+<h2 class="title">
+                    <a href="http://dsebban.github.io/blog/fr/2014/hello.html" rel="bookmark" title="Permanent Link to &quot;Hello World&quot;">Hello World</a>
+                </h2>
+
+                <p>My <em>first</em> post using <a class="reference external" href="http://docs.getpelican.com/en/3.3.0/getting_started.html">Pelican</a>!</p>
+
+
+                <div class="clear"></div>
+                <div class="info">
+                    <a href="http://dsebban.github.io/blog/fr/2014/hello.html">posted at 23:24</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/fr/tag/pelican.html" class="tags">pelican</a>&nbsp;<a href="http://dsebban.github.io/blog/fr/tag/web.html" class="tags">web</a>
                 </div>
 
             </article>
@@ -141,7 +150,7 @@ Slug: my-super-post
                 &middot;
                 Powered by <a href="http://getpelican.com">Pelican</a>
                 &middot;
-                <a href="http://dsebban.github.io/blog/feeds/all.atom.xml" rel="alternate">Atom Feed</a>
+                <a href="http://dsebban.github.io/blog/fr/feeds/all.atom.xml" rel="alternate">Atom Feed</a>
             </footer>
         </div>
         <div class="clear"></div>
