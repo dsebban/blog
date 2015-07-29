@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Daniel Sebban le blog</title><link href="http://dsebban.github.io/blog/fr/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/fr/</id><updated>2015-07-20T22:20:00+02:00</updated><entry><title>RxJava in Action with live financial market data from IB (Part 1)</title><link href="http://dsebban.github.io/blog/fr/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="alternate"></link><updated>2015-07-20T22:20:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-20:blog/fr/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html</id><summary type="html">&lt;p&gt;Dans un de mes récents projets j'ai automatisé une stratégie de trading en utilisant L'API Java &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt;,
- Le framework qui s'accorde aver merveille pour travailler avec des flux de donnes  en temps reel est
-&lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;.
-Lire la doc et les examples de RxJava peu etre assez abstrait, voici un example concret de comment integrer ces deux technologies ensembles&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Connecter les donnees du marche avec la classe marketDataObservable de RxJava&lt;/li&gt;
-&lt;li&gt;Aggreger les  donnees temp reel en bar d'une minute , utilisant les operateurs groupBy, flatmap et buffer.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h3&gt;1. Feed market data to the RxJava marketDataObservable class&lt;/h3&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Daniel Sebban le blog</title><link href="http://dsebban.github.io/blog/fr/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/fr/</id><updated>2015-07-20T22:20:00+02:00</updated><entry><title>RxJava in Action with live financial market data from IB (Part 1)</title><link href="http://dsebban.github.io/blog/fr/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="alternate"></link><updated>2015-07-20T22:20:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-20:blog/fr/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html</id><summary type="html">&lt;p&gt;Dans un de mes récents projets j'ai automatisé une stratégie de trading en utilisant L'API Java &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt;,
+Le framework qui s'accorde avec merveille pour travailler avec des flux de donnes  en temps reel est &lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;.
+Lire la doc et les exemples de RxJava peu etre assez abstrait, voici un exemple concret de comment integrer ces deux technologies ensembles
+  - Connecter les donnees du marche avec la classe marketDataObservable de RxJava
+  - Agréger les  donnees temp reel en bar d'une minute , utilisant les operateurs groupBy, flatmap et buffer.&lt;/p&gt;
+&lt;h3&gt;1. Connecter les donnees du marche avec la classe marketDataObservable&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt; &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;subscribeRealTimeData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Instrument&lt;/span&gt; &lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
     &lt;span class="n"&gt;controller&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;reqTopMktData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ibContract&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;232&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;ApiController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;ITopMktDataHandler&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt;
     &lt;span class="o"&gt;{&lt;/span&gt;
@@ -25,19 +22,19 @@ Lire la doc et les examples de RxJava peu etre assez abstrait, voici un example 
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;Now each time a tick arrives from IB, it will be pushed to our Obseravble. Now we can now fold the data as we want using the different opearator of RxJava Observable&lt;/p&gt;
-&lt;h3&gt;2. Aggregate tick data to 1-minute bars&lt;/h3&gt;
+&lt;p&gt;Chaque fois qu'un prix arrive depuis IB , il serra pousser dans notre Observable,On peut maintenant travailler avec les donnees et les utiliser les operateurs de RxJAva&lt;/p&gt;
+&lt;h3&gt;2. Agréger les donnes temps reel en bars d'1-minute&lt;/h3&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;aggregateLiveMinuteBar&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
 
     &lt;span class="n"&gt;observable&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;
-            &lt;span class="n"&gt;ofType&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LivePriceEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;class&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;//filter on live ticks&lt;/span&gt;
-            &lt;span class="n"&gt;groupBy&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;LivePriceEvent:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;// group by instrument i.e AAPL, GOOG&lt;/span&gt;
-            &lt;span class="n"&gt;flatMap&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;grouped&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;grouped&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;buffer&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;)).&lt;/span&gt; &lt;span class="c1"&gt;// take each 2 consecutive events&lt;/span&gt;
+            &lt;span class="n"&gt;ofType&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LivePriceEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;class&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;//donne moi seulement les donnees temps reel&lt;/span&gt;
+            &lt;span class="n"&gt;groupBy&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;LivePriceEvent:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;// groupe par instrument i.e AAPL, GOOG&lt;/span&gt;
+            &lt;span class="n"&gt;flatMap&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;grouped&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;grouped&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;buffer&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;)).&lt;/span&gt; &lt;span class="c1"&gt;// prend chaque 2 prix consecutif&lt;/span&gt;
             &lt;span class="n"&gt;subscribe&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;listOf2&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
                 &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;listOf2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
                 &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
                 &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;listOf2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
-        &lt;span class="c1"&gt;//when minute is crossed , we push the result back in the observable to make it available to other subscribers&lt;/span&gt;
+        &lt;span class="c1"&gt;///quand la minute est passe , on pousse le resultat dans l observable pour que la minute-bar soit disponible pour d&amp;#39;autres souscripteurs&lt;/span&gt;
         &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
                     &lt;span class="n"&gt;push&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;LiveBarEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TimeUnit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;MINUTES&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;createTimestamp&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getPrice&lt;/span&gt;&lt;span class="o"&gt;()));&lt;/span&gt;
                 &lt;span class="o"&gt;}&lt;/span&gt;
@@ -49,8 +46,8 @@ Lire la doc et les examples de RxJava peu etre assez abstrait, voici un example 
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;h3&gt;3. Running the minute bar aggregator against IB demo feed&lt;/h3&gt;
-&lt;p&gt;just follow the instructions from the &lt;a href="https://github.com/dsebban/blog-post-1"&gt;github&lt;/a&gt;&lt;/p&gt;
+&lt;h3&gt;3. Executer  l’application  sur votre machine avec un flux demo d'IB&lt;/h3&gt;
+&lt;p&gt;suivre les instructions sur mon github &lt;a href="https://github.com/dsebban/blog-post-1"&gt;github&lt;/a&gt;&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;git clone &lt;span class="o"&gt;[&lt;/span&gt;https://github.com/dsebban/blog-post-1&lt;span class="o"&gt;]&lt;/span&gt; rx-ib
 &lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;rx-ib
 &lt;span class="nv"&gt;$ &lt;/span&gt;mvn package
@@ -58,7 +55,7 @@ Lire la doc et les examples de RxJava peu etre assez abstrait, voici un example 
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;p&gt;you should see something like this&lt;/p&gt;
+&lt;p&gt;vous devriez voir&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1&lt;span class="nv"&gt;$ &lt;/span&gt;foreman start
 
 16:22:37 ib.1   | started with pid 29935
@@ -87,4 +84,4 @@ Slug: my-super-post
 &lt;/pre&gt;&lt;/div&gt;
 
 
-&lt;h3&gt;To be continued (Part 2 taking advantage of your multicore cpu with observeOn RxJava operator )&lt;/h3&gt;</summary><category term="java"></category><category term="RxJava"></category><category term="finance"></category></entry></feed>
+&lt;h3&gt;La prochainne fois  (Partie 2 utiliser les operateurs de multi-threading  observeOn pour executer le code de maniere concurente )&lt;/h3&gt;</summary><category term="java"></category><category term="RxJava"></category><category term="finance"></category></entry></feed>

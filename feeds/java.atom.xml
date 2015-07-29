@@ -1,5 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>Daniel Sebban's Blog</title><link href="http://dsebban.github.io/blog/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/</id><updated>2015-07-20T22:20:00+02:00</updated><entry><title>RxJava in Action with live financial market data from IB (Part 1)</title><link href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="alternate"></link><updated>2015-07-20T22:20:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-20:blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html</id><summary type="html">&lt;p&gt;In one of my recent projects I automated a trading strategy using &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt; Java API,
+<feed xmlns="http://www.w3.org/2005/Atom"><title>Daniel Sebban's Blog</title><link href="http://dsebban.github.io/blog/" rel="alternate"></link><link href="http://dsebban.github.io/blog/feeds/java.atom.xml" rel="self"></link><id>http://dsebban.github.io/blog/</id><updated>2015-07-29T22:51:00+02:00</updated><entry><title>RxJava in Action with live financial market data from IB (Part 2)</title><link href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-2.html" rel="alternate"></link><updated>2015-07-29T22:51:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-29:blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-2.html</id><summary type="html">&lt;p&gt;In this post we will make our observable receive live data from AAPL and GOOG, nothing new here, but with the help of observeOn operator we can aggregate the tick data of each Instrument on its own thread with little effort, multi-core programming made easy:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Subscribe to APPL and GOOG ticks with the IB API&lt;/li&gt;
+&lt;li&gt;Modify marketDataObservable to make the 1-minute bar aggregation on its own thread.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;1. Subscribe to APPL and GOOG ticks with the IB API&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt; &lt;span class="n"&gt;InteractiveBrokersFeed&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstance&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;connect&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+ &lt;span class="n"&gt;InteractiveBrokersFeed&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstance&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;subscribeRealTimeData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Instruments&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;APPL&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;val&lt;/span&gt;&lt;span class="o"&gt;());&lt;/span&gt;
+ &lt;span class="n"&gt;InteractiveBrokersFeed&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstance&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;subscribeRealTimeData&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Instruments&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;GOOG&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;val&lt;/span&gt;&lt;span class="o"&gt;());&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now we will receive ticks from GOOG and AAPL as they get in live&lt;/p&gt;
+&lt;h3&gt;2. Modify marketDataObservable to make the 1-minute bar aggregation on its own thread.&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;aggregateLiveMinuteBar&lt;/span&gt;&lt;span class="o"&gt;()&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
+
+    &lt;span class="n"&gt;observable&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;
+            &lt;span class="n"&gt;ofType&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;LivePriceEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;class&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;//filter on live ticks&lt;/span&gt;
+            &lt;span class="n"&gt;groupBy&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;LivePriceEvent:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt; &lt;span class="c1"&gt;// group by instrument i.e AAPL, GOOG&lt;/span&gt;
+            &lt;span class="n"&gt;flatMap&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;grouped&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;grouped&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;buffer&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;)).&lt;/span&gt; &lt;span class="c1"&gt;// take each 2 consecutive events&lt;/span&gt;
+            &lt;span class="c1"&gt;//until here same as Part 1&lt;/span&gt;
+
+
+            &lt;span class="c1"&gt;//1. instead of subscribe we use flatMap , to produce a fresh observable&lt;/span&gt;
+            &lt;span class="n"&gt;flatMap&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;listOf2&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt;
+
+                    &lt;span class="c1"&gt;//2. ---Generate One Minute Bar Task -----&lt;/span&gt;
+                    &lt;span class="n"&gt;Observable&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;defer&lt;/span&gt;&lt;span class="o"&gt;(()&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
+                        &lt;span class="c1"&gt;//Logic to check if the minute has been crossed&lt;/span&gt;
+
+                        &lt;span class="c1"&gt;//simulate heavy computation&lt;/span&gt;
+                        &lt;span class="n"&gt;sleepALittle&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+
+                        &lt;span class="n"&gt;LivePriceEvent&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;listOf2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+                        &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+                        &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;DateTime&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;listOf2&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="na"&gt;getCreateTimestamp&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;&lt;span class="na"&gt;minuteOfHour&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;get&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+                        &lt;span class="c1"&gt;//3. when minute is crossed , we create a new observable with the minute in it&lt;/span&gt;
+                        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lastMinute&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="n"&gt;currentMinute&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt; &lt;span class="o"&gt;{&lt;/span&gt;
+                            &lt;span class="n"&gt;System&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;out&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;println&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;[generating minute bar]&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;Thread&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;currentThread&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;getName&lt;/span&gt;&lt;span class="o"&gt;());&lt;/span&gt;
+                            &lt;span class="c1"&gt;//4.&lt;/span&gt;
+                            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;Observable&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;just&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="k"&gt;new&lt;/span&gt; &lt;span class="n"&gt;LiveBarEvent&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TimeUnit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;MINUTES&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;createTimestamp&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getInstrument&lt;/span&gt;&lt;span class="o"&gt;(),&lt;/span&gt; &lt;span class="n"&gt;lastEvent&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;getPrice&lt;/span&gt;&lt;span class="o"&gt;()));&lt;/span&gt;
+                        &lt;span class="o"&gt;}&lt;/span&gt;
+
+                        &lt;span class="n"&gt;System&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;out&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;println&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;[ignoring event ]&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;Thread&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;currentThread&lt;/span&gt;&lt;span class="o"&gt;().&lt;/span&gt;&lt;span class="na"&gt;getName&lt;/span&gt;&lt;span class="o"&gt;());&lt;/span&gt;
+                        &lt;span class="c1"&gt;//5.&lt;/span&gt;
+                        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;Observable&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;empty&lt;/span&gt;&lt;span class="o"&gt;();&lt;/span&gt;
+
+                    &lt;span class="o"&gt;}).&lt;/span&gt;
+                            &lt;span class="c1"&gt;//6. every Task get executed on the computation thread pool&lt;/span&gt;
+                            &lt;span class="n"&gt;subscribeOn&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="n"&gt;Schedulers&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="na"&gt;computation&lt;/span&gt;&lt;span class="o"&gt;()).&lt;/span&gt;
+                            &lt;span class="n"&gt;doOnEach&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="nl"&gt;Utils:&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="n"&gt;printInfo&lt;/span&gt;&lt;span class="o"&gt;)&lt;/span&gt;
+
+
+    &lt;span class="o"&gt;).&lt;/span&gt;&lt;span class="c1"&gt;//7. end of flatmap&lt;/span&gt;
+
+            &lt;span class="c1"&gt;//8. push the result back to make it available for subscribers&lt;/span&gt;
+            &lt;span class="n"&gt;subscribe&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="k"&gt;this&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="n"&gt;push&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+&lt;span class="o"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;2&lt;/em&gt;. we use &lt;a href="http://reactivex.io/documentation/operators/defer.html"&gt;defer&lt;/a&gt; to create a fresh observable each time data from a distinct  Instrument arrives.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;4&lt;/em&gt;. and &lt;em&gt;5&lt;/em&gt;. we return also Observables to abide to the defer signature (it needs to return an observable).&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;6&lt;/em&gt;. That's where all the magic happens &lt;a href="http://reactivex.io/documentation/operators/subscribeon.html"&gt;subscribeOn(Schedulers.computation())&lt;/a&gt; tell RxJava to use the thread pool computation each time someone subscribe to the previous observable effectively this makes all the code from &lt;em&gt;2&lt;/em&gt;. to &lt;em&gt;5&lt;/em&gt;. runs on a new thread.  &lt;/p&gt;
+&lt;h3&gt;3. Running it against IB demo feed&lt;/h3&gt;
+&lt;p&gt;just follow the instructions from the &lt;a href="https://github.com/dsebban/blog-post-1"&gt;github&lt;/a&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;git clone &lt;span class="o"&gt;[&lt;/span&gt;https://github.com/dsebban/blog-post-2&lt;span class="o"&gt;]&lt;/span&gt; rx-ib-2
+&lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;rx-ib-2
+&lt;span class="nv"&gt;$ &lt;/span&gt;mvn package
+&lt;span class="nv"&gt;$ &lt;/span&gt;foreman start
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;you should see something like this pay attention to the name of the thread you can see it's different each time some data is aggregated , here RxComputationThreadPool-4 and RxComputationThreadPool-5&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1&lt;span class="nv"&gt;$ &lt;/span&gt;foreman start
+22:41:01 app.1  | INFO: GOOG IB tick Wed Jul 29 22:41:01 IDT 2015 price 628.09
+22:41:01 app.1  | &lt;span class="o"&gt;[&lt;/span&gt;generating minute bar&lt;span class="o"&gt;]&lt;/span&gt;RxComputationThreadPool-4
+22:41:01 app.1  |           &lt;span class="o"&gt;[&lt;/span&gt;TID:  16 : RxComputationThreadPool-4&lt;span class="o"&gt;]&lt;/span&gt; LiveBarEvent&lt;span class="o"&gt;{&lt;/span&gt;min:40-sec:58-ms:537, &lt;span class="nv"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;GOOG, &lt;span class="nv"&gt;price&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;628.121&lt;span class="o"&gt;}&lt;/span&gt;
+22:41:01 app.1  | INFO: &lt;span class="nv"&gt;minute&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; 40 &lt;span class="nv"&gt;val&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;LiveBarEvent&lt;span class="o"&gt;{&lt;/span&gt;min:40-sec:58-ms:537, &lt;span class="nv"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;GOOG, &lt;span class="nv"&gt;price&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;628.121&lt;span class="o"&gt;}&lt;/span&gt;
+22:41:03 app.1  | INFO: AAPL IB tick Wed Jul 29 22:41:03 IDT 2015 price 124.77
+22:41:03 app.1  | &lt;span class="o"&gt;[&lt;/span&gt;generating minute bar&lt;span class="o"&gt;]&lt;/span&gt;RxComputationThreadPool-5
+22:41:03 app.1  |           &lt;span class="o"&gt;[&lt;/span&gt;TID:  17 : RxComputationThreadPool-5&lt;span class="o"&gt;]&lt;/span&gt; LiveBarEvent&lt;span class="o"&gt;{&lt;/span&gt;min:40-sec:50-ms:528, &lt;span class="nv"&gt;instrument&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;APPL, &lt;span class="nv"&gt;price&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;124.781&lt;span class="o"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;To be continued (Part 3 writing a simple algotrading strategy using RxJava and IB  )&lt;/h3&gt;</summary><category term="java"></category><category term="RxJava"></category><category term="finance"></category></entry><entry><title>RxJava in Action with live financial market data from IB (Part 1)</title><link href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="alternate"></link><updated>2015-07-20T22:20:00+02:00</updated><author><name>Daniel Sebban</name></author><id>tag:dsebban.github.io,2015-07-20:blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html</id><summary type="html">&lt;p&gt;In one of my recent projects I automated a trading strategy using &lt;a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;amp;ns=T"&gt;Iteractive Brokers&lt;/a&gt; Java API,
  the perfect companion framework to handle large amount of live and historical data is
 &lt;a href="https://github.com/ReactiveX/RxJava"&gt;RxJava&lt;/a&gt;.
 Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:&lt;/p&gt;
