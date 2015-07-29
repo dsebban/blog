@@ -95,7 +95,7 @@
 <p><em>4</em>. and <em>5</em>. we return also Observables to abide to the defer signature (it needs to return an observable).</p>
 <p><em>6</em>. That's where all the magic happens <a href="http://reactivex.io/documentation/operators/subscribeon.html">subscribeOn(Schedulers.computation())</a> tell RxJava to use the thread pool computation each time someone subscribe to the previous observable effectively this makes all the code from <em>2</em>. to <em>5</em>. runs on a new thread.  </p>
 <h3>3. Running it against IB demo feed</h3>
-<p>just follow the instructions from the <a href="https://github.com/dsebban/blog-post-1">github</a></p>
+<p>just follow the instructions from the <a href="https://github.com/dsebban/blog-post-2">github</a></p>
 <div class="highlight"><pre><span class="nv">$ </span>git clone <span class="o">[</span>https://github.com/dsebban/blog-post-2<span class="o">]</span> rx-ib-2
 <span class="nv">$ </span><span class="nb">cd </span>rx-ib-2
 <span class="nv">$ </span>mvn package
@@ -239,5 +239,14 @@ Slug: my-super-post
         </div>
         <div class="clear"></div>
     </div>
+    <script type="text/javascript">
+    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+    try {
+        var pageTracker = _gat._getTracker("UA-65283210-1");
+    pageTracker._trackPageview();
+    } catch(err) {}</script>
 </body>
 </html>

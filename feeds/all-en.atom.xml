@@ -64,7 +64,7 @@
 &lt;p&gt;&lt;em&gt;4&lt;/em&gt;. and &lt;em&gt;5&lt;/em&gt;. we return also Observables to abide to the defer signature (it needs to return an observable).&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;6&lt;/em&gt;. That's where all the magic happens &lt;a href="http://reactivex.io/documentation/operators/subscribeon.html"&gt;subscribeOn(Schedulers.computation())&lt;/a&gt; tell RxJava to use the thread pool computation each time someone subscribe to the previous observable effectively this makes all the code from &lt;em&gt;2&lt;/em&gt;. to &lt;em&gt;5&lt;/em&gt;. runs on a new thread.  &lt;/p&gt;
 &lt;h3&gt;3. Running it against IB demo feed&lt;/h3&gt;
-&lt;p&gt;just follow the instructions from the &lt;a href="https://github.com/dsebban/blog-post-1"&gt;github&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;just follow the instructions from the &lt;a href="https://github.com/dsebban/blog-post-2"&gt;github&lt;/a&gt;&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;$ &lt;/span&gt;git clone &lt;span class="o"&gt;[&lt;/span&gt;https://github.com/dsebban/blog-post-2&lt;span class="o"&gt;]&lt;/span&gt; rx-ib-2
 &lt;span class="nv"&gt;$ &lt;/span&gt;&lt;span class="nb"&gt;cd &lt;/span&gt;rx-ib-2
 &lt;span class="nv"&gt;$ &lt;/span&gt;mvn package
