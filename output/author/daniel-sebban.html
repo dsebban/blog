@@ -25,6 +25,216 @@
     </header>
     <div id="wrapper">
         <div id="content">
+            <h4 class="date">Nov 11, 2017</h4>
+            <article class="post">
+<h2 class="title">
+                    <a href="http://dsebban.github.io/blog/2017/refactoring-to-functional-patterns-in-scala.html" rel="bookmark" title="Permanent Link to &quot;Refactoring to functional patterns in Scala&quot;">Refactoring to functional patterns in Scala</a>
+                </h2>
+
+                <p>If you have a background in Java like me you probably read
+<a href="https://industriallogic.com/xp/refactoring/">Refactoring To Patterns</a>, It's a very cool book about refactorings, it shows how to refactor OO code step by step and getting to a full blown GoF design pattern at then end .
+It made a big impact on me at the time, you get the feeling that code is alive and wants to be rearanged this way, patterns emerge naturally.</p>
+<p>Fast forward 10 years later, I now work in a very cool startup <a href="https://bigpanda.io/careers/">Bigpanda</a> and we use Scala and Functional programming for our back end services.
+Working with FP is very different and I would say way easier, no more complicated class hierarchies, no more complicated patterns, only functions, functions, functions.</p>
+<p>In this post I will build from simple refactorings to more advanced ones using the State monad and Writer monad (which are functional design patterns)</p>
+<h2>Make sure you have a full suite of tests with good coverage</h2>
+<p>Refactoring without tests is like jumping without a safety net, sbt as a very useful continuous test runner :</p>
+<div class="highlight"><pre><span class="o">~</span><span class="n">testQuick</span> <span class="n">io</span><span class="o">.</span><span class="n">company</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="nc">PricingServiceSpec</span>
+</pre></div>
+
+
+<p>Each time you save your file it will recompile it and rerun only the failing previous tests </p>
+<h2>Eliminate primitive types with value classes</h2>
+<p><em>Before</em></p>
+<div class="highlight"><pre><span class="k">def</span> <span class="n">buy</span><span class="o">(</span><span class="n">lastPrice</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">exchange</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Double</span><span class="o">,</span> <span class="kt">Long</span><span class="o">)</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p><em>After</em></p>
+<div class="highlight"><pre><span class="k">case</span> <span class="k">class</span> <span class="nc">Symbol</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Exchange</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Price</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Timestamp</span><span class="o">(</span><span class="n">ts</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Price</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">Double</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+
+<span class="k">def</span> <span class="n">buy2</span><span class="o">(</span><span class="n">lastPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">,</span> <span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">exchange</span><span class="k">:</span> <span class="kt">Exchange</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Price</span><span class="o">,</span> <span class="kt">Timestamp</span><span class="o">)</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p>We have a package called <code>types</code> and we will put all our value classes in <code>values.scala</code> file
+We will also add <code>Ordering</code> implicits there  </p>
+<div class="highlight"><pre><span class="k">implicit</span> <span class="k">val</span> <span class="n">timestampOrdering</span><span class="k">:</span> <span class="kt">Ordering</span><span class="o">[</span><span class="kt">Timestamp</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Ordering</span><span class="o">.</span><span class="n">by</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">ts</span><span class="o">)</span>
+</pre></div>
+
+
+<h2>Rewrite on the side and then switch the functions</h2>
+<p>Note that I did not start deleting old code, first I write the new function on the side, make sure it compiles
+and then I will switch the old ones and make sure the tests pass, this is very handy trick in order to backtrack 
+quickly if you have an error somewhere.</p>
+<h2>Align the types between functions</h2>
+<p>If your functions compose together in a natural way, it means you found the right level of abstraction where you should be.</p>
+<p>Keep them small and focused on one thing, add type annotations for the return types to increase readability.</p>
+<p>If you have to do hard work with the type transformations to be able to compose your functions together, 
+one solution : </p>
+<ul>
+<li>Inline, inline, inline, and retry.</li>
+</ul>
+<p>After a while you get that hang of it and your functions will be focused and compose together, you can also do some upfront design.</p>
+<p>You can watch <a href="https://www.infoq.com/presentations/Type-Functional-Design#.WgQgsvnDY9Q">A Type Driven Approach to Functional Design</a>, it's in haskell
+but it's very relevant and will give you a sense of how to design functions that compose together.</p>
+<h2>Use State monad for functions that need previously computed values</h2>
+<p>Let's define some types to work with :</p>
+<div class="highlight"><pre><span class="k">sealed</span> <span class="k">abstract</span> <span class="k">class</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="k">val</span> <span class="n">rating</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Good</span><span class="o">(</span><span class="n">points</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="n">points</span><span class="o">)</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Fair</span><span class="o">(</span><span class="n">points</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="n">points</span><span class="o">)</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Poor</span><span class="o">(</span><span class="n">points</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="n">points</span><span class="o">)</span>
+
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">PriceEvent</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">price</span><span class="k">:</span> <span class="kt">Price</span><span class="o">,</span> <span class="n">ts</span><span class="k">:</span> <span class="kt">Timestamp</span><span class="o">)</span>
+</pre></div>
+
+
+<p>In any meaningfull service you will need previously computed data, also you
+will want to persist it in case you crash or restart your app. This lead
+to satefull functions</p>
+<p>In order to rate a stock we need the previous prices and rating, this usually leads to
+this type of long ugly parameter list.
+Also remember that our data structures are immutable so we have to return a new updated version of them.</p>
+<p><em>Before</em></p>
+<div class="highlight"><pre><span class="k">def</span> <span class="n">rateStock</span><span class="o">(</span><span class="n">historicalPrices</span><span class="k">:</span>  <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">List</span><span class="o">[(</span><span class="kt">Timestamp</span>, <span class="kt">Price</span><span class="o">)]],</span>
+             <span class="n">lastRatings</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">CreditRating</span><span class="o">],</span>
+             <span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> 
+             <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">CreditRating</span><span class="o">],</span> <span class="nc">List</span><span class="o">[(</span><span class="kt">Timestamp</span>, <span class="kt">Price</span><span class="o">)])</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p>Quite ugly !</p>
+<p>This is a very common pattern in FP , you can use <code>State</code> monad to communicate to the reader
+that he is about to deal with statefull functions.</p>
+<p>We use cat's <a href="https://typelevel.org/cats/datatypes/state.html">State</a> </p>
+<p>We encapsulate the moving parts in our own defined type : </p>
+<div class="highlight"><pre><span class="k">case</span> <span class="k">class</span> <span class="nc">StockState</span><span class="o">(</span><span class="n">historicalPrices</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">List</span><span class="o">[(</span><span class="kt">Timestamp</span>, <span class="kt">Price</span><span class="o">)]],</span>
+                      <span class="n">lastRatings</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">CreditRating</span><span class="o">])</span>
+</pre></div>
+
+
+<p>We use <code>State</code> to cleanup the parameter list and the return type : </p>
+<div class="highlight"><pre><span class="k">import</span> <span class="nn">cats.implicits._</span>
+<span class="k">import</span> <span class="nn">cats.data.State</span>
+
+<span class="k">def</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">State</span><span class="o">[</span><span class="kt">StockState</span>, <span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p>We can improve the type readability with a type alias:</p>
+<p><em>After</em></p>
+<div class="highlight"><pre><span class="k">type</span> <span class="kt">StateAction</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">State</span><span class="o">[</span><span class="kt">StockState</span>, <span class="kt">A</span><span class="o">]</span>
+<span class="k">def</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateAction</span><span class="o">[</span><span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p>The function is way cleaner and it can compute and update the ratings from the previous state.</p>
+<p>This gives us the ability to chain state functions as follows and be guaranteed that each function
+receive the correct latest updated state, very cool !!!</p>
+<div class="highlight"><pre><span class="k">for</span> <span class="o">{</span>
+
+  <span class="n">a</span> <span class="k">&lt;-</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="nc">Symbol</span><span class="o">(</span><span class="s">&quot;AAPL&quot;</span><span class="o">),</span> <span class="nc">Price</span><span class="o">(</span><span class="mf">145.5</span><span class="o">))</span>  
+
+  <span class="c1">// something magical happens here, </span>
+  <span class="c1">// it passes on the correct StockState to the next function</span>
+
+  <span class="n">s</span> <span class="k">&lt;-</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="nc">Symbol</span><span class="o">(</span><span class="s">&quot;SAMSNG&quot;</span><span class="o">),</span> <span class="nc">Price</span><span class="o">(</span><span class="mf">2123.3</span><span class="o">))</span>   
+
+<span class="o">}</span> <span class="k">yield</span> <span class="o">(</span><span class="n">a</span><span class="o">,</span> <span class="n">s</span><span class="o">)</span>
+</pre></div>
+
+
+<h2>Use <code>Writer</code> monad to track state transitions when using <code>State</code></h2>
+<p>If you work with Event sourcing you will want to recreate your state from all
+the transitions you did to it,in order to keep track of state transitions and not dirty up 
+too much your function you can use <code>Writer</code> monad to log all the transitions in a List.</p>
+<p>First let's define some more types:  </p>
+<div class="highlight"><pre>  <span class="k">sealed</span> <span class="k">trait</span> <span class="nc">Transition</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">UpgradedRating</span><span class="o">(</span><span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Transition</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">DowngradedRating</span><span class="o">(</span><span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Transition</span>
+</pre></div>
+
+
+<p>State and Writer melded into one type, need to use WriterT to combine them together:</p>
+<div class="highlight"><pre>  <span class="k">import</span> <span class="nn">cats.data.WriterT</span> 
+
+  <span class="k">type</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">WriterT</span><span class="o">[</span><span class="kt">StateAction</span>, <span class="kt">List</span><span class="o">[</span><span class="kt">Transition</span><span class="o">]</span>, <span class="kt">A</span><span class="o">]</span>
+</pre></div>
+
+
+<p>Use this function to log transitions and add it to the final transition list: </p>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">archive</span><span class="o">(</span><span class="n">evts</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Transition</span><span class="o">])</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span>
+    <span class="nc">WriterT</span><span class="o">.</span><span class="n">tell</span><span class="o">(</span><span class="n">evts</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Boilerplate to wire up State and Writer together</p>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">lift</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">s</span><span class="k">:</span> <span class="kt">StateAction</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span>
+    <span class="nc">WriterT</span><span class="o">.</span><span class="n">lift</span><span class="o">(</span><span class="n">s</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Pure functions, pay attention the return type is a simple type, it's not wrapped in <code>StateActionWithTransitions</code>,
+this signal the reader that this function is not changing the state and thus safe.</p>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">calculateRating</span><span class="o">(</span><span class="n">stock</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">old</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">CreditRating</span> <span class="o">=</span> 
+    <span class="k">if</span> <span class="o">(</span><span class="n">stock</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&quot;AAPL&quot;</span><span class="o">)</span> <span class="nc">Good</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span> <span class="k">else</span> <span class="k">if</span><span class="o">(</span><span class="n">newPrice</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="nc">Poor</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="k">else</span> <span class="nc">Fair</span><span class="o">(</span><span class="mi">300</span><span class="o">)</span> 
+
+  <span class="k">def</span> <span class="n">calculateTransition</span><span class="o">(</span><span class="n">oldRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">,</span> <span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span><span class="k">:</span> <span class="kt">Transition</span> <span class="o">=</span> 
+    <span class="k">if</span><span class="o">(</span><span class="n">newRating</span><span class="o">.</span><span class="n">rating</span> <span class="o">&gt;</span> <span class="n">oldRating</span><span class="o">.</span><span class="n">rating</span><span class="o">)</span> <span class="nc">UpgradedRating</span><span class="o">(</span><span class="n">newRating</span><span class="o">)</span> <span class="k">else</span> <span class="nc">DowngradedRating</span><span class="o">(</span><span class="n">oldRating</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Stateful functions, the return type is <code>StateActionWithTransitions</code> the reader must pay special care
+because this function uses or update the state: </p>
+<div class="highlight"><pre>  <span class="k">import</span> <span class="nn">com.softwaremill.quicklens._</span> 
+
+  <span class="k">def</span> <span class="n">setNewRating</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
+   <span class="n">lift</span><span class="o">(</span><span class="nc">State</span><span class="o">.</span><span class="n">modify</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">modify</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">lastRatings</span><span class="o">).</span><span class="n">using</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="o">(</span><span class="n">symbol</span> <span class="o">-&gt;</span> <span class="n">newRating</span><span class="o">))))</span>
+
+  <span class="k">def</span> <span class="n">getRating</span><span class="o">(</span><span class="n">s</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span> 
+    <span class="n">lift</span><span class="o">(</span><span class="nc">State</span><span class="o">.</span><span class="n">inspect</span><span class="o">[</span><span class="kt">StockState</span>, <span class="kt">CreditRating</span><span class="o">](</span><span class="k">_</span><span class="o">.</span><span class="n">lastRatings</span><span class="o">.</span><span class="n">get</span><span class="o">(</span><span class="n">s</span><span class="o">).</span><span class="n">getOrElse</span><span class="o">(</span><span class="nc">Poor</span><span class="o">(</span><span class="mi">0</span><span class="o">))))</span>
+</pre></div>
+
+
+<p>Here is the final version of our function:</p>
+<ul>
+<li>Whenever the reader sees <code>&lt;-</code> he knows to pay special attention it's a statefull function </li>
+<li>Whenever the reader sees <code>=</code> he knows it's a pure function and nothing related to state happens there</li>
+</ul>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span>   
+    <span class="k">for</span> <span class="o">{</span>
+      <span class="n">oldRating</span> <span class="k">&lt;-</span> <span class="n">getRating</span><span class="o">(</span><span class="n">symbol</span><span class="o">)</span>
+      <span class="n">newRating</span> <span class="k">=</span> <span class="n">calculateRating</span><span class="o">(</span><span class="n">symbol</span><span class="o">,</span> <span class="n">oldRating</span><span class="o">,</span> <span class="n">newPrice</span><span class="o">)</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">setNewRating</span><span class="o">(</span><span class="n">symbol</span><span class="o">,</span> <span class="n">newRating</span><span class="o">)</span>  
+      <span class="n">transition</span> <span class="k">=</span> <span class="n">calculateTransition</span><span class="o">(</span><span class="n">oldRating</span><span class="o">,</span> <span class="n">newRating</span><span class="o">)</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">archive</span><span class="o">(</span><span class="n">transition</span> <span class="o">::</span> <span class="nc">Nil</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">yield</span> <span class="n">newRating</span>
+</pre></div>
+
+
+<h2>Takeaways</h2>
+<ul>
+<li>Before refactoring make sure you have good tests with descent coverage </li>
+<li>Strongly type as much as you can, use meaningful names and abstractions</li>
+<li>Design your functions so their type align and compose together</li>
+<li>Use cats's <code>State</code> data type to write function that need state</li>
+<li>Use type aliases to cleanup boilerplate types</li>
+<li>Use cat's <code>Writer</code> data type to log state transitions</li>
+</ul>
+
+                <div class="clear"></div>
+                <div class="info">
+                    <a href="http://dsebban.github.io/blog/2017/refactoring-to-functional-patterns-in-scala.html">posted at 21:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/scala.html" rel="tag">Scala</a>
+                </div>
+
+            </article>
+            <div class="clear"></div>
             <h4 class="date">Jul 17, 2015</h4>
             <article class="post">
 <h2 class="title">

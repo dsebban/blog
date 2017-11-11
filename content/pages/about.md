@@ -4,18 +4,21 @@ Title: About
 Interests
 ---------
 
-I am a 9 years experienced Java developer. 
-I have worked 2 years in the financial sector in London and the last few years in multiple startups in Tel Aviv, focusing on server side development with multi-threaded and distributed environments.
-I have strong skills in java programming, object oriented design, design patterns and test driven development.
-I have been involved in doing research in the field of "Domain Specific Languages" at the University of Tel Aviv under the supervision of Prof. Amiram Yehudai.
-I am always challenging myself by learning new technologies, lately I have been using python and bitcoin to experiment with a new type of algotrading.
+I have more than 10 years experience in Java development with a specialization in Big Data and server side technologies. 
 
-Specialties: Java, J2EE,Python
-OOD /OOA,
+I have worked in challenging projects from investment banks in London to innovative startups in Tel Aviv: designing, implementing and delivering quality and scalable software.
+
+I have strong skills in java programming, object-oriented design, design patterns and test driven development, with up to date knowledge of the latest java technologies.
+
+Lately I have been developing high scale backend software using technologies such as Scala/Akka/Kafka and functional programming
+
+I put an emphasis on communication and agile methodologies, with the ability to manage and plan my work at a very high level of accuracy, notably for delivery dates. I also enjoy sharing knowledge and tutoring younger developers 
+
+Specialties: Java, Scala/Akka, Big Data
+FP/OO,
 TDD, Agile methodologies
-Exchange traded derivatives, Market risk, Operational risk,Algorithmic trading
-Payment processing, Bitcoin
-
+Exchange traded derivatives, Market risk, Operational risk, Algorithmic trading,
+Payment processing
 
 Contact Details
 ---------------
