@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8" />
+        <title>RxJava in Action with Interactive Brokers market data</title>
+        <link rel="stylesheet" href="/theme/css/main.css" />
+
+        <!--[if IE]>
+            <script src="https://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">Reactive Java </a></h1>
+                <nav><ul>
+                    <li class="active"><a href="/category/java.html">Java</a></li>
+                </ul></nav>
+        </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/rxjava-in-action-with-interactive-brokers-market-data.html" rel="bookmark"
+           title="Permalink to RxJava in Action with Interactive Brokers market data">RxJava in Action with Interactive Brokers market data</a></h1>
+    </header>
+
+    <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2010-12-03T10:20:00+01:00">
+                Published: Fri 03 December 2010
+        </abbr>
+
+        <address class="vcard author">
+                By                         <a class="url fn" href="/author/daniel-sebban.html">Daniel Sebban</a>
+        </address>
+<p>In <a href="/category/java.html">Java</a>.</p>
+
+</footer><!-- /.post-info -->      <p>In one of my recent projects I automated a trading strategy using <a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;ns=T">Iteractive Brokers</a> Java API,
+ the perfect fit to handle the live and historical data and produce metrics or pass order is
+<a href="https://github.com/ReactiveX/RxJava">RxJava</a>  . Reading the doc and example of RXJava can be intimidating and quite abstract , here is a hands on example of how to use it and what it can do:</p>
+<ul>
+<li>Hook up market data to the marketDataService Observable</li>
+<li>Aggregate tick data to 1-minute bars</li>
+<li>Calculate moving average for AAPL</li>
+<li>Pass a buy order when moving avg below a given threshold</li>
+</ul>
+<h3>1. Hook up market data to the marketDataService Observable</h3>
+<div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">tickPrice</span><span class="o">(</span><span class="n">TickType</span> <span class="n">tickType</span><span class="o">,</span> <span class="kt">double</span> <span class="n">price</span><span class="o">,</span> <span class="kt">int</span> <span class="n">canAutoExecute</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">if</span><span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">BID</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">RealTimeBidTickEvent</span> <span class="n">tick</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimeBidTickEvent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span>  <span class="n">instrument</span><span class="o">,</span> <span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">price</span><span class="o">).</span><span class="na">setScale</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">RoundingMode</span><span class="o">.</span><span class="na">UP</span><span class="o">));</span>
+                <span class="n">marketDataService</span><span class="o">.</span><span class="na">onNext</span><span class="o">(</span><span class="n">tick</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="k">if</span><span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">ASK</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">RealTimeAskTickEvent</span> <span class="n">tick</span> <span class="o">=</span> <span class="k">new</span> <span class="n">RealTimeAskTickEvent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span>  <span class="n">instrument</span><span class="o">,</span> <span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">price</span><span class="o">).</span><span class="na">setScale</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">RoundingMode</span><span class="o">.</span><span class="na">UP</span><span class="o">));</span>
+                <span class="n">marketDataService</span><span class="o">.</span><span class="na">onNext</span><span class="o">(</span><span class="n">tick</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</pre></div>
+
+
+<p>Now each time a tick arrives from IB , it will be pushed to our Obseravble , let''s have some fun and and start by aggregating our tick data into a minute data bar.</p>
+<h3>2. Aggregate tick data to 1-minute bars</h3>
+<div class="highlight"><pre><span class="kd">private</span> <span class="kt">void</span> <span class="nf">aggregateRealTime</span><span class="o">(</span><span class="n">RealTimeTickEvent</span> <span class="n">e</span> <span class="o">,</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">RealTimeTickEvent</span><span class="o">,</span><span class="n">Map</span><span class="o">&lt;</span><span class="n">Instrument</span><span class="o">,</span> <span class="n">LinkedList</span><span class="o">&lt;</span><span class="n">RealTimeTickEvent</span><span class="o">&gt;&gt;&gt;</span> <span class="n">mapFactory</span><span class="o">,</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">RealTimeTickEvent</span><span class="o">,</span><span class="n">BigDecimal</span><span class="o">,</span><span class="n">HistoricalBarEvent</span><span class="o">&gt;</span> <span class="n">tickfactory</span><span class="o">){</span>
+
+    <span class="n">LinkedList</span><span class="o">&lt;</span><span class="n">RealTimeTickEvent</span><span class="o">&gt;</span> <span class="n">ticks</span> <span class="o">=</span> <span class="n">mapFactory</span><span class="o">.</span><span class="na">call</span><span class="o">(</span><span class="n">e</span><span class="o">).</span><span class="na">get</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getInstrument</span><span class="o">());</span>
+
+    <span class="k">if</span><span class="o">(</span><span class="n">ticks</span> <span class="o">==</span><span class="kc">null</span><span class="o">){</span>
+        <span class="n">ticks</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LinkedList</span><span class="o">&lt;</span><span class="n">RealTimeTickEvent</span><span class="o">&gt;();</span>
+        <span class="n">mapFactory</span><span class="o">.</span><span class="na">call</span><span class="o">(</span><span class="n">e</span><span class="o">).</span><span class="na">put</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getInstrument</span><span class="o">(),</span><span class="n">ticks</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="k">if</span> <span class="o">(</span><span class="n">ticks</span><span class="o">.</span><span class="na">size</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kt">int</span> <span class="n">lastMinute</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DateTime</span><span class="o">(</span><span class="n">ticks</span><span class="o">.</span><span class="na">getFirst</span><span class="o">().</span><span class="na">getCreateTimestamp</span><span class="o">()).</span><span class="na">minuteOfHour</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
+        <span class="kt">int</span> <span class="n">currentMinute</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DateTime</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getCreateTimestamp</span><span class="o">()).</span><span class="na">minuteOfHour</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
+
+        <span class="k">if</span> <span class="o">(</span><span class="n">lastMinute</span> <span class="o">!=</span> <span class="n">currentMinute</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">BigDecimal</span> <span class="n">avg</span> <span class="o">=</span> <span class="n">ticks</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">map</span><span class="o">(</span><span class="nl">RealTimeTickEvent:</span><span class="o">:</span><span class="n">getPrice</span><span class="o">).</span><span class="na">reduce</span><span class="o">(</span><span class="nl">BigDecimal:</span><span class="o">:</span><span class="n">add</span><span class="o">).</span><span class="na">get</span><span class="o">().</span><span class="na">divide</span><span class="o">(</span><span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">ticks</span><span class="o">.</span><span class="na">size</span><span class="o">()),</span><span class="mi">3</span><span class="o">,</span><span class="n">BigDecimal</span><span class="o">.</span><span class="na">ROUND_UP</span><span class="o">);</span>
+            <span class="n">HistoricalBarEvent</span> <span class="n">bar</span> <span class="o">=</span> <span class="n">tickfactory</span><span class="o">.</span><span class="na">call</span><span class="o">(</span><span class="n">ticks</span><span class="o">.</span><span class="na">getFirst</span><span class="o">(),</span><span class="n">avg</span><span class="o">);</span>
+            <span class="n">ticks</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+            <span class="n">push</span><span class="o">(</span><span class="n">bar</span><span class="o">);</span>
+
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="n">ticks</span><span class="o">.</span><span class="na">push</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+<span class="o">}</span>
+</pre></div>
+
+
+<h3>3. Calculate moving average for AAPL</h3>
+<h3>4. Pass a buy order when moving avg below a given threshold</h3>
+<p>Markdown is a lightweight markup language based on the formatting conventions that people naturally use in email.  As <a href="http://daringfireball.net/">John Gruber</a> writes on the <a href="http://daringfireball.net/projects/markdown/">Markdown site</a>:</p>
+<blockquote>
+<p>The overriding design goal for Markdown's
+formatting syntax is to make it as readable
+as possible. The idea is that a
+Markdown-formatted document should be
+publishable as-is, as plain text, without
+looking like it's been marked up with tags
+or formatting instructions.</p>
+</blockquote>
+<p>This text you see here is <em>actually</em> written in Markdown! To get a feel for Markdown's syntax, type some text into the left window and watch the results in the right.</p>
+<h3>Version</h3>
+<p>3.0.0</p>
+<h3>Tech</h3>
+<p>Dillinger uses a number of open source projects to work properly:</p>
+<ul>
+<li><a href="http://angularjs.org">AngularJS</a> - HTML enhanced for web apps!</li>
+<li><a href="http://ace.ajax.org">Ace Editor</a> - awesome web-based text editor</li>
+<li><a href="https://github.com/chjj/marked">Marked</a> - a super fast port of Markdown to JavaScript</li>
+<li><a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a> - great UI boilerplate for modern web apps</li>
+<li><a href="http://nodejs.org">node.js</a> - evented I/O for the backend</li>
+<li><a href="http://expressjs.com">Express</a> - fast node.js network app framework <a href="http://twitter.com/tjholowaychuk">@tjholowaychuk</a></li>
+<li><a href="http://gulpjs.com">Gulp</a> - the streaming build system</li>
+<li><a href="https://github.com/madrobby/keymaster">keymaster.js</a> - awesome keyboard handler lib by <a href="http://twitter.com/thomasfuchs">@thomasfuchs</a></li>
+<li><a href="http://jquery.com">jQuery</a> - duh</li>
+</ul>
+<h3>Installation</h3>
+<div class="highlight"><pre><span class="nv">$ </span>git clone <span class="o">[</span>git-repo-url<span class="o">]</span> dillinger
+<span class="nv">$ </span><span class="nb">cd </span>dillinger
+<span class="nv">$ </span>npm i -d
+<span class="nv">$ </span>mkdir -p public/files/<span class="o">{</span>md,html,pdf<span class="o">}</span>
+<span class="nv">$ </span>gulp build --prod
+<span class="nv">$ NODE_ENV</span><span class="o">=</span>production node app
+</pre></div>
+
+
+<h3>Plugins</h3>
+<p>Dillinger is currently extended with the following plugins</p>
+<ul>
+<li>Dropbox</li>
+<li>Github</li>
+<li>Google Drive</li>
+<li>OneDrive</li>
+</ul>
+<p>Readmes, how to use them in your own application can be found here:</p>
+<ul>
+<li>plugins/dropbox/README.md</li>
+<li>plugins/github/README.md</li>
+<li>plugins/googledrive/README.md</li>
+<li>plugins/onedrive/README.md</li>
+</ul>
+<h3>Development</h3>
+<p>Want to contribute? Great!</p>
+<p>Dillinger uses Gulp + Webpack for fast developing.
+Make a change in your file and instantanously see your updates!</p>
+<p>Open your favorite Terminal and run these commands.</p>
+<p>First Tab:</p>
+<div class="highlight"><pre><span class="nv">$ </span>node app
+</pre></div>
+
+
+<p>Second Tab:</p>
+<div class="highlight"><pre><span class="nv">$ </span>gulp watch
+</pre></div>
+
+
+<p>(optional) Third:</p>
+<div class="highlight"><pre><span class="nv">$ </span>karma start
+</pre></div>
+
+
+<h3>Todo's</h3>
+<p>Write Tests
+Github saving overhaul
+Code Commenting
+Night Mode</p>
+<h2>License</h2>
+<p>MIT</p>
+<p><strong>Free Software, Hell Yeah!</strong></p>
+    </div><!-- /.entry-content -->
+
+  </article>
+</section>
+        <section id="extras" class="body">
+                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+
+                            <li><a href="#">You can add links in your config file</a></li>
+                            <li><a href="#">Another social link</a></li>
+                        </ul>
+                </div><!-- /.social -->
+        </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

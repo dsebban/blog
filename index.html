@@ -24,128 +24,233 @@
     </header>
     <div id="wrapper">
         <div id="content">
-            <h4 class="date">Jul 29, 2015</h4>
+            <h4 class="date">Nov 17, 2017</h4>
             <article class="post">
 <h2 class="title">
-                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-2.html" rel="bookmark" title="Permanent Link to &quot;RxJava in Action with live financial market data from IB (Part 2)&quot;">RxJava in Action with live financial market data from IB (Part 2)</a>
+                    <a href="http://dsebban.github.io/blog/2017/refactoring-to-functional-patterns-in-scala.html" rel="bookmark" title="Permanent Link to &quot;Refactoring to functional patterns in Scala&quot;">Refactoring to functional patterns in Scala</a>
                 </h2>
 
-                <p>In this post we will make our observable receive live data from AAPL and GOOG, nothing new here, but with the help of observeOn operator we can aggregate the tick data of each Instrument on its own thread with little effort, multi-core programming made easy:</p>
+                <h1>Refactoring to functional patterns in Scala</h1>
+<p>If you have a background in Java like me you probably read
+<a href="https://industriallogic.com/xp/refactoring/">Refactoring To Patterns</a>. It's a very cool book about refactorings that shows you how to refactor Object Orientated code step by step and eventually reach full blown Gang of Four design patterns. It had a huge impact on me at the time. It left me with the feeling that code is alive and wants to be rearranged this way, and that patterns emerge naturally.</p>
+<p>Fast forward 10 years, and I work in a very cool startup (<a href="https://bigpanda.io/careers/">Bigpanda</a>) where we use Scala and Functional programming for our back end services.
+Working with FP is very different, and in my opinion far easier. The are no more complicated class hierarchies and no more complicated patterns, only functions, functions, functions. If GoF design patterns are no longer our destination, then the refactoring steps we must take are very different. </p>
+<p>In this post I'll introduce you to some approaches to refactoring functional code. I will build from simple refactorings to more advanced ones using the State and Writer monads - functional design patterns.</p>
+<h2>Make sure you have a full suite of tests with good coverage</h2>
+<p>Refactoring without tests is like jumping without a safety net. You can use sbt as a very useful continuous test runner:</p>
+<div class="highlight"><pre><span class="o">~</span><span class="n">testQuick</span> <span class="n">io</span><span class="o">.</span><span class="n">company</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="nc">PricingServiceSpec</span>
+</pre></div>
+
+
+<p>Each time you save your file it will recompile it and rerun only the previously failing tests </p>
+<h2>Eliminate primitive types with value classes</h2>
+<p><em>Before</em></p>
+<div class="highlight"><pre><span class="k">def</span> <span class="n">buy</span><span class="o">(</span><span class="n">lastPrice</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">exchange</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Double</span><span class="o">,</span> <span class="kt">Long</span><span class="o">)</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p><em>After</em></p>
+<div class="highlight"><pre><span class="k">case</span> <span class="k">class</span> <span class="nc">Symbol</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Exchange</span><span class="o">(</span><span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Price</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Timestamp</span><span class="o">(</span><span class="n">ts</span><span class="k">:</span> <span class="kt">Long</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AnyVal</span>
+
+<span class="k">def</span> <span class="n">buy2</span><span class="o">(</span><span class="n">lastPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">,</span> <span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">exchange</span><span class="k">:</span> <span class="kt">Exchange</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Price</span><span class="o">,</span> <span class="kt">Timestamp</span><span class="o">)</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p>We have a package called <code>types</code> and we will put all our value classes in <code>values.scala</code> file
+We will also add <code>Ordering</code> implicits there.</p>
+<div class="highlight"><pre><span class="k">implicit</span> <span class="k">val</span> <span class="n">timestampOrdering</span><span class="k">:</span> <span class="kt">Ordering</span><span class="o">[</span><span class="kt">Timestamp</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Ordering</span><span class="o">.</span><span class="n">by</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">ts</span><span class="o">)</span>
+</pre></div>
+
+
+<!--- Please explain the benefits of this pattern. Also maybe mention that AnyVals 'compile out'  --->
+
+<h2>Rewrite on the side and then switch the functions</h2>
+<p>Typically I do not start by deleting old code. First I write the new function on the side, make sure it compiles
+and then switch the old ones and make sure the tests pass. This is very handy trick to let you backtrack 
+quickly if you have an error somewhere.</p>
+<h2>Align the types between functions</h2>
+<p>If your functions compose together in a natural way, it means that you have found the right level of abstraction.</p>
+<p>Keep them small and focused on one thing, add type annotations for the return types to increase readability.</p>
+<p>If you find that you need to work hard with type transformations to be able to compose your functions together then try this: </p>
 <ul>
-<li>Subscribe to APPL and GOOG ticks with the IB API</li>
-<li>Modify marketDataObservable to make the 1-minute bar aggregation on its own thread.</li>
+<li>Inline, inline, inline, and retry.</li>
 </ul>
-<h3>1. Subscribe to APPL and GOOG ticks with the IB API</h3>
-<div class="highlight"><pre> <span class="n">InteractiveBrokersFeed</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">connect</span><span class="o">();</span>
- <span class="n">InteractiveBrokersFeed</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instruments</span><span class="o">.</span><span class="na">APPL</span><span class="o">.</span><span class="na">val</span><span class="o">());</span>
- <span class="n">InteractiveBrokersFeed</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instruments</span><span class="o">.</span><span class="na">GOOG</span><span class="o">.</span><span class="na">val</span><span class="o">());</span>
+<p>After a while you get that hang of it and your functions will be focused and compose together. You can also do some upfront design.</p>
+<p>Personally I found <a href="https://www.infoq.com/presentations/Type-Functional-Design#.WgQgsvnDY9Q">A Type Driven Approach to Functional Design</a> helpful. It's in Haskell but it is still very relevant and will give you a sense of how to design functions that compose together.</p>
+<h2>Use State monad for functions that need previously computed values</h2>
+<p>Let's define some types to work with:</p>
+<div class="highlight"><pre><span class="k">sealed</span> <span class="k">abstract</span> <span class="k">class</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="k">val</span> <span class="n">rating</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Good</span><span class="o">(</span><span class="n">points</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="n">points</span><span class="o">)</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Fair</span><span class="o">(</span><span class="n">points</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="n">points</span><span class="o">)</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">Poor</span><span class="o">(</span><span class="n">points</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">CreditRating</span><span class="o">(</span><span class="n">points</span><span class="o">)</span>
+
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">PriceEvent</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">price</span><span class="k">:</span> <span class="kt">Price</span><span class="o">,</span> <span class="n">ts</span><span class="k">:</span> <span class="kt">Timestamp</span><span class="o">)</span>
 </pre></div>
 
 
-<p>Now we will receive ticks from GOOG and AAPL as they get in live</p>
-<h3>2. Modify marketDataObservable to make the 1-minute bar aggregation on its own thread.</h3>
-<div class="highlight"><pre><span class="kd">public</span> <span class="kt">void</span> <span class="nf">aggregateLiveMinuteBar</span><span class="o">()</span> <span class="o">{</span>
-
-    <span class="n">observable</span><span class="o">().</span>
-            <span class="n">ofType</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">.</span><span class="na">class</span><span class="o">).</span> <span class="c1">//filter on live ticks</span>
-            <span class="n">groupBy</span><span class="o">(</span><span class="nl">LivePriceEvent:</span><span class="o">:</span><span class="n">getInstrument</span><span class="o">).</span> <span class="c1">// group by instrument i.e AAPL, GOOG</span>
-            <span class="n">flatMap</span><span class="o">(</span><span class="n">grouped</span> <span class="o">-&gt;</span> <span class="n">grouped</span><span class="o">.</span><span class="na">buffer</span><span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">1</span><span class="o">)).</span> <span class="c1">// take each 2 consecutive events</span>
-            <span class="c1">//until here same as Part 1</span>
-
-
-            <span class="c1">//1. instead of subscribe we use flatMap , to produce a fresh observable</span>
-            <span class="n">flatMap</span><span class="o">(</span><span class="n">listOf2</span> <span class="o">-&gt;</span>
-
-                    <span class="c1">//2. ---Generate One Minute Bar Task -----</span>
-                    <span class="n">Observable</span><span class="o">.</span><span class="na">defer</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                        <span class="c1">//Logic to check if the minute has been crossed</span>
-
-                        <span class="c1">//simulate heavy computation</span>
-                        <span class="n">sleepALittle</span><span class="o">();</span>
-
-                        <span class="n">LivePriceEvent</span> <span class="n">lastEvent</span> <span class="o">=</span> <span class="n">listOf2</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
-                        <span class="kt">int</span> <span class="n">lastMinute</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DateTime</span><span class="o">(</span><span class="n">lastEvent</span><span class="o">.</span><span class="na">getCreateTimestamp</span><span class="o">()).</span><span class="na">minuteOfHour</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
-                        <span class="kt">int</span> <span class="n">currentMinute</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DateTime</span><span class="o">(</span><span class="n">listOf2</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">getCreateTimestamp</span><span class="o">()).</span><span class="na">minuteOfHour</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
-                        <span class="c1">//3. when minute is crossed , we create a new observable with the minute in it</span>
-                        <span class="k">if</span> <span class="o">(</span><span class="n">lastMinute</span> <span class="o">!=</span> <span class="n">currentMinute</span><span class="o">)</span> <span class="o">{</span>
-                            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;[generating minute bar]&quot;</span> <span class="o">+</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
-                            <span class="c1">//4.</span>
-                            <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="k">new</span> <span class="n">LiveBarEvent</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MINUTES</span><span class="o">,</span> <span class="n">lastEvent</span><span class="o">.</span><span class="na">createTimestamp</span><span class="o">,</span> <span class="n">lastEvent</span><span class="o">.</span><span class="na">getInstrument</span><span class="o">(),</span> <span class="n">lastEvent</span><span class="o">.</span><span class="na">getPrice</span><span class="o">()));</span>
-                        <span class="o">}</span>
-
-                        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;[ignoring event ]&quot;</span> <span class="o">+</span> <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">getName</span><span class="o">());</span>
-                        <span class="c1">//5.</span>
-                        <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">empty</span><span class="o">();</span>
-
-                    <span class="o">}).</span>
-                            <span class="c1">//6. every Task get executed on the computation thread pool</span>
-                            <span class="n">subscribeOn</span><span class="o">(</span><span class="n">Schedulers</span><span class="o">.</span><span class="na">computation</span><span class="o">()).</span>
-                            <span class="n">doOnEach</span><span class="o">(</span><span class="nl">Utils:</span><span class="o">:</span><span class="n">printInfo</span><span class="o">)</span>
-
-
-    <span class="o">).</span><span class="c1">//7. end of flatmap</span>
-
-            <span class="c1">//8. push the result back to make it available for subscribers</span>
-            <span class="n">subscribe</span><span class="o">(</span><span class="k">this</span><span class="o">::</span><span class="n">push</span><span class="o">);</span>
-<span class="o">}</span>
+<p>In any meaningful service you will need previously computed data. You'll also want to persist it in case you crash or restart your app. This lead to sateful functions.</p>
+<p>In order to rate a stock we need the previous prices and rating, this usually leads to long ugly parameter lists. Because our data structures are immutable so we have to return new updated versions of them.</p>
+<p><em>Before</em></p>
+<div class="highlight"><pre><span class="k">def</span> <span class="n">rateStock</span><span class="o">(</span><span class="n">historicalPrices</span><span class="k">:</span>  <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">List</span><span class="o">[(</span><span class="kt">Timestamp</span>, <span class="kt">Price</span><span class="o">)]],</span>
+             <span class="n">lastRatings</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">CreditRating</span><span class="o">],</span>
+             <span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> 
+             <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="o">(</span><span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">CreditRating</span><span class="o">],</span> <span class="nc">List</span><span class="o">[(</span><span class="kt">Timestamp</span>, <span class="kt">Price</span><span class="o">)])</span> <span class="k">=</span> <span class="o">???</span>
 </pre></div>
 
 
-<p><em>2</em>. we use <a href="http://reactivex.io/documentation/operators/defer.html">defer</a> to create a fresh observable each time data from a distinct  Instrument arrives.</p>
-<p><em>4</em>. and <em>5</em>. we return also Observables to abide to the defer signature (it needs to return an observable).</p>
-<p><em>6</em>. That's where all the magic happens <a href="http://reactivex.io/documentation/operators/subscribeon.html">subscribeOn(Schedulers.computation())</a> tell RxJava to use the thread pool computation each time someone subscribe to the previous observable effectively this makes all the code from <em>2</em>. to <em>5</em>. runs on a new thread.  </p>
-<h3>3. Running it against IB demo feed</h3>
-<p>just follow the instructions from the <a href="https://github.com/dsebban/blog-post-2">github</a></p>
-<div class="highlight"><pre><span class="nv">$ </span>git clone <span class="o">[</span>https://github.com/dsebban/blog-post-2<span class="o">]</span> rx-ib-2
-<span class="nv">$ </span><span class="nb">cd </span>rx-ib-2
-<span class="nv">$ </span>mvn package
-<span class="nv">$ </span>foreman start
+<p>Quite ugly!</p>
+<p>This is a very common pattern in FP. You can use <code>State</code> monad to communicate to the reader
+that they are about to deal with stateful functions.</p>
+<p>We use cat's <a href="https://typelevel.org/cats/datatypes/state.html">State</a>.</p>
+<p>We encapsulate the moving parts in our own defined type : </p>
+<div class="highlight"><pre><span class="k">case</span> <span class="k">class</span> <span class="nc">StockState</span><span class="o">(</span><span class="n">historicalPrices</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">List</span><span class="o">[(</span><span class="kt">Timestamp</span>, <span class="kt">Price</span><span class="o">)]],</span>
+                      <span class="n">lastRatings</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">Symbol</span>, <span class="kt">CreditRating</span><span class="o">])</span>
 </pre></div>
 
 
-<p>you should see something like this pay attention to the name of the thread you can see it's different each time some data is aggregated , here RxComputationThreadPool-4 and RxComputationThreadPool-5</p>
-<div class="highlight"><pre>daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1<span class="nv">$ </span>foreman start
-22:41:01 app.1  | INFO: GOOG IB tick Wed Jul 29 22:41:01 IDT 2015 price 628.09
-22:41:01 app.1  | <span class="o">[</span>generating minute bar<span class="o">]</span>RxComputationThreadPool-4
-22:41:01 app.1  |           <span class="o">[</span>TID:  16 : RxComputationThreadPool-4<span class="o">]</span> LiveBarEvent<span class="o">{</span>min:40-sec:58-ms:537, <span class="nv">instrument</span><span class="o">=</span>GOOG, <span class="nv">price</span><span class="o">=</span>628.121<span class="o">}</span>
-22:41:01 app.1  | INFO: <span class="nv">minute</span> <span class="o">=</span> 40 <span class="nv">val</span><span class="o">=</span>LiveBarEvent<span class="o">{</span>min:40-sec:58-ms:537, <span class="nv">instrument</span><span class="o">=</span>GOOG, <span class="nv">price</span><span class="o">=</span>628.121<span class="o">}</span>
-22:41:03 app.1  | INFO: AAPL IB tick Wed Jul 29 22:41:03 IDT 2015 price 124.77
-22:41:03 app.1  | <span class="o">[</span>generating minute bar<span class="o">]</span>RxComputationThreadPool-5
-22:41:03 app.1  |           <span class="o">[</span>TID:  17 : RxComputationThreadPool-5<span class="o">]</span> LiveBarEvent<span class="o">{</span>min:40-sec:50-ms:528, <span class="nv">instrument</span><span class="o">=</span>APPL, <span class="nv">price</span><span class="o">=</span>124.781<span class="o">}</span>
+<p>We use <code>State</code> to cleanup the parameter list and the return type : </p>
+<div class="highlight"><pre><span class="k">import</span> <span class="nn">cats.implicits._</span>
+<span class="k">import</span> <span class="nn">cats.data.State</span>
+
+<span class="k">def</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">State</span><span class="o">[</span><span class="kt">StockState</span>, <span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
 </pre></div>
 
 
-<h3>To be continued (Part 3 writing a simple algotrading strategy using RxJava and IB  )</h3>
+<p>We can improve the type readability with a type alias:</p>
+<p><em>After</em></p>
+<div class="highlight"><pre><span class="k">type</span> <span class="kt">StateAction</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">State</span><span class="o">[</span><span class="kt">StockState</span>, <span class="kt">A</span><span class="o">]</span>
+<span class="k">def</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateAction</span><span class="o">[</span><span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span> <span class="o">???</span>
+</pre></div>
+
+
+<p>The function is far cleaner and it can compute and update the ratings from the previous state.</p>
+<p>This gives us the ability to chain state functions as follows and be guaranteed that each function
+receive the correct latest updated state, very cool !!!</p>
+<div class="highlight"><pre><span class="k">for</span> <span class="o">{</span>
+
+  <span class="n">a</span> <span class="k">&lt;-</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="nc">Symbol</span><span class="o">(</span><span class="s">&quot;AAPL&quot;</span><span class="o">),</span> <span class="nc">Price</span><span class="o">(</span><span class="mf">145.5</span><span class="o">))</span>  
+
+  <span class="c1">// something magical happens here, </span>
+  <span class="c1">// it passes on the correct StockState to the next function</span>
+
+  <span class="n">s</span> <span class="k">&lt;-</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="nc">Symbol</span><span class="o">(</span><span class="s">&quot;SAMSNG&quot;</span><span class="o">),</span> <span class="nc">Price</span><span class="o">(</span><span class="mf">2123.3</span><span class="o">))</span>   
+
+<span class="o">}</span> <span class="k">yield</span> <span class="o">(</span><span class="n">a</span><span class="o">,</span> <span class="n">s</span><span class="o">)</span>
+</pre></div>
+
+
+<h2>Use <code>Writer</code> monad to track state transitions when using <code>State</code></h2>
+<p>If you work with Event sourcing you will want to recreate your state from all
+the transitions you carried out. In order to keep track of state transitions without
+complicating your function you can use <code>Writer</code> monad to log all the transitions in a List.</p>
+<p>First let's define some more types:  </p>
+<div class="highlight"><pre>  <span class="k">sealed</span> <span class="k">trait</span> <span class="nc">Transition</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">UpgradedRating</span><span class="o">(</span><span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Transition</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">DowngradedRating</span><span class="o">(</span><span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Transition</span>
+</pre></div>
+
+
+<p>We want to use State and Writer together, so let's use WriteT to combine them:</p>
+<div class="highlight"><pre>  <span class="k">import</span> <span class="nn">cats.data.WriterT</span> 
+
+  <span class="k">type</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nc">WriterT</span><span class="o">[</span><span class="kt">StateAction</span>, <span class="kt">List</span><span class="o">[</span><span class="kt">Transition</span><span class="o">]</span>, <span class="kt">A</span><span class="o">]</span>
+</pre></div>
+
+
+<p>Use this function to log transitions and add it to the final transition list: </p>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">archive</span><span class="o">(</span><span class="n">evts</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Transition</span><span class="o">])</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span>
+    <span class="nc">WriterT</span><span class="o">.</span><span class="n">tell</span><span class="o">(</span><span class="n">evts</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Boilerplate to wire up State and Writer together</p>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">lift</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">s</span><span class="k">:</span> <span class="kt">StateAction</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span>
+    <span class="nc">WriterT</span><span class="o">.</span><span class="n">lift</span><span class="o">(</span><span class="n">s</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Pure functions have simple return types that are not wrapped in <code>StateActionWithTransitions</code>.
+This tells the the reader that this function does not change the state.</p>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">calculateRating</span><span class="o">(</span><span class="n">stock</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">old</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">CreditRating</span> <span class="o">=</span> 
+    <span class="k">if</span> <span class="o">(</span><span class="n">stock</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s">&quot;AAPL&quot;</span><span class="o">)</span> <span class="nc">Good</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span> <span class="k">else</span> <span class="k">if</span><span class="o">(</span><span class="n">newPrice</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="nc">Poor</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="k">else</span> <span class="nc">Fair</span><span class="o">(</span><span class="mi">300</span><span class="o">)</span> 
+
+  <span class="k">def</span> <span class="n">calculateTransition</span><span class="o">(</span><span class="n">oldRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">,</span> <span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span><span class="k">:</span> <span class="kt">Transition</span> <span class="o">=</span> 
+    <span class="k">if</span><span class="o">(</span><span class="n">newRating</span><span class="o">.</span><span class="n">rating</span> <span class="o">&gt;</span> <span class="n">oldRating</span><span class="o">.</span><span class="n">rating</span><span class="o">)</span> <span class="nc">UpgradedRating</span><span class="o">(</span><span class="n">newRating</span><span class="o">)</span> <span class="k">else</span> <span class="nc">DowngradedRating</span><span class="o">(</span><span class="n">oldRating</span><span class="o">)</span>
+</pre></div>
+
+
+<p>Stateful functions have the return type  <code>StateActionWithTransitions</code>. This tells the reader
+to pay special care because this function uses or updates the state: </p>
+<div class="highlight"><pre>  <span class="k">import</span> <span class="nn">com.softwaremill.quicklens._</span> 
+
+  <span class="k">def</span> <span class="n">setNewRating</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newRating</span><span class="k">:</span> <span class="kt">CreditRating</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]</span> <span class="k">=</span> 
+   <span class="n">lift</span><span class="o">(</span><span class="nc">State</span><span class="o">.</span><span class="n">modify</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">modify</span><span class="o">(</span><span class="k">_</span><span class="o">.</span><span class="n">lastRatings</span><span class="o">).</span><span class="n">using</span><span class="o">(</span><span class="k">_</span> <span class="o">+</span> <span class="o">(</span><span class="n">symbol</span> <span class="o">-&gt;</span> <span class="n">newRating</span><span class="o">))))</span>
+
+  <span class="k">def</span> <span class="n">getRating</span><span class="o">(</span><span class="n">s</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span> 
+    <span class="n">lift</span><span class="o">(</span><span class="nc">State</span><span class="o">.</span><span class="n">inspect</span><span class="o">[</span><span class="kt">StockState</span>, <span class="kt">CreditRating</span><span class="o">](</span><span class="k">_</span><span class="o">.</span><span class="n">lastRatings</span><span class="o">.</span><span class="n">get</span><span class="o">(</span><span class="n">s</span><span class="o">).</span><span class="n">getOrElse</span><span class="o">(</span><span class="nc">Poor</span><span class="o">(</span><span class="mi">0</span><span class="o">))))</span>
+</pre></div>
+
+
+<p>Here is the final version of our function:</p>
+<ul>
+<li>Whenever the reader sees <code>&lt;-</code> he knows to pay special attention as it is a stateful function </li>
+<li>Whenever the reader sees <code>=</code> he knows it's a pure function and nothing related to state happens there</li>
+</ul>
+<div class="highlight"><pre>  <span class="k">def</span> <span class="n">rateStatefulStock</span><span class="o">(</span><span class="n">symbol</span><span class="k">:</span> <span class="kt">Symbol</span><span class="o">,</span> <span class="n">newPrice</span><span class="k">:</span> <span class="kt">Price</span><span class="o">)</span><span class="k">:</span> <span class="kt">StateActionWithTransitions</span><span class="o">[</span><span class="kt">CreditRating</span><span class="o">]</span> <span class="k">=</span>   
+    <span class="k">for</span> <span class="o">{</span>
+      <span class="n">oldRating</span> <span class="k">&lt;-</span> <span class="n">getRating</span><span class="o">(</span><span class="n">symbol</span><span class="o">)</span>
+      <span class="n">newRating</span> <span class="k">=</span> <span class="n">calculateRating</span><span class="o">(</span><span class="n">symbol</span><span class="o">,</span> <span class="n">oldRating</span><span class="o">,</span> <span class="n">newPrice</span><span class="o">)</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">setNewRating</span><span class="o">(</span><span class="n">symbol</span><span class="o">,</span> <span class="n">newRating</span><span class="o">)</span>  
+      <span class="n">transition</span> <span class="k">=</span> <span class="n">calculateTransition</span><span class="o">(</span><span class="n">oldRating</span><span class="o">,</span> <span class="n">newRating</span><span class="o">)</span>
+      <span class="k">_</span> <span class="k">&lt;-</span> <span class="n">archive</span><span class="o">(</span><span class="n">transition</span> <span class="o">::</span> <span class="nc">Nil</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">yield</span> <span class="n">newRating</span>
+</pre></div>
+
+
+<h2>Takeaways</h2>
+<ul>
+<li>Before refactoring make sure you have good tests with decent coverage </li>
+<li>Strongly type as much as you can, use meaningful names and abstractions</li>
+<li>Design your functions so their types align and compose together</li>
+<li>Use cats's <code>State</code> data type to write functions that need state</li>
+<li>Use type aliases to cleanup boilerplate types</li>
+<li>Use cat's <code>Writer</code> data type to log state transitions</li>
+</ul>
 
                 <div class="clear"></div>
                 <div class="info">
-                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-2.html">posted at 22:51</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/tag/java.html" class="tags">java</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/rxjava.html" class="tags">RxJava</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/finance.html" class="tags">finance</a>
+                    <a href="http://dsebban.github.io/blog/2017/refactoring-to-functional-patterns-in-scala.html">posted at 09:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/scala.html" rel="tag">Scala</a>
                 </div>
 
             </article>
             <div class="clear"></div>
-            <h4 class="date">Jul 20, 2015</h4>
+            <h4 class="date">Jul 17, 2015</h4>
             <article class="post">
 <h2 class="title">
-                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html" rel="bookmark" title="Permanent Link to &quot;RxJava in Action with live financial market data from IB (Part 1)&quot;">RxJava in Action with live financial market data from IB (Part 1)</a>
+                    <a href="http://dsebban.github.io/blog/2015/java-rx-with-live-financial-market-data-from-ib.html" rel="bookmark" title="Permanent Link to &quot;Java Rx with live financial market data from IB&quot;">Java Rx with live financial market data from IB</a>
                 </h2>
 
                 <p>In one of my recent projects I automated a trading strategy using <a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;ns=T">Iteractive Brokers</a> Java API,
- the perfect companion framework to handle large amount of live and historical data is
-<a href="https://github.com/ReactiveX/RxJava">RxJava</a>.
-Reading the doc and examples of RxJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
+ the perfect companion framework  to handle large amount if  live and historical data  is
+<a href="https://github.com/ReactiveX/RxJava">RxJava</a>. 
+Reading the doc and examples of RXJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
 <ul>
-<li>Feed market data to the RxJava marketDataObservable class</li>
-<li>Aggregate tick data to 1-minute bars, using groupBy, flatmap and buffer operators</li>
+<li>Hook up market data to the marketDataService Observable</li>
+<li>Aggregate tick data to 1-minute bars , using groupBy , flatmap and buffer operators</li>
 </ul>
-<h3>1. Feed market data to the RxJava marketDataObservable class</h3>
+<h3>1. Hook up market data to the marketDataService Observable</h3>
 <div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span>
+    <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span> 
     <span class="o">{</span>
         <span class="nd">@Override</span>
         <span class="kd">public</span> <span class="kt">void</span> <span class="nf">tickPrice</span><span class="o">(</span><span class="n">TickType</span> <span class="n">tickType</span><span class="o">,</span> <span class="kt">double</span> <span class="n">price</span><span class="o">,</span> <span class="kt">int</span> <span class="n">canAutoExecute</span><span class="o">)</span> <span class="o">{</span>
 
-            <span class="k">if</span> <span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">ASK</span><span class="o">)</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">ASK</span><span class="o">)</span> 
             <span class="o">{</span>
                 <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&quot;IB tick &quot;</span> <span class="o">+</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; price &quot;</span> <span class="o">+</span> <span class="n">price</span><span class="o">);</span>
                 <span class="n">LivePriceEvent</span> <span class="n">priceEvent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LivePriceEvent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span> <span class="n">instrument</span><span class="o">,</span> <span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">price</span><span class="o">).</span><span class="na">setScale</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">RoundingMode</span><span class="o">.</span><span class="na">UP</span><span class="o">));</span>
@@ -156,13 +261,13 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 </pre></div>
 
 
-<p>Now each time a tick arrives from IB, it will be pushed to our Obseravble. Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
+<p>Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
 <h3>2. Aggregate tick data to 1-minute bars</h3>
 <div class="highlight"><pre><span class="kd">public</span> <span class="kt">void</span> <span class="nf">aggregateLiveMinuteBar</span><span class="o">()</span> <span class="o">{</span>
 
     <span class="n">observable</span><span class="o">().</span>
             <span class="n">ofType</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">.</span><span class="na">class</span><span class="o">).</span> <span class="c1">//filter on live ticks</span>
-            <span class="n">groupBy</span><span class="o">(</span><span class="nl">LivePriceEvent:</span><span class="o">:</span><span class="n">getInstrument</span><span class="o">).</span> <span class="c1">// group by instrument i.e AAPL, GOOG</span>
+            <span class="n">groupBy</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">::</span><span class="n">getInstrument</span><span class="o">).</span> <span class="c1">// group by instrument i.e AAPL, GOOG</span>
             <span class="n">flatMap</span><span class="o">(</span><span class="n">grouped</span> <span class="o">-&gt;</span> <span class="n">grouped</span><span class="o">.</span><span class="na">buffer</span><span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">1</span><span class="o">)).</span> <span class="c1">// take each 2 consecutive events</span>
             <span class="n">subscribe</span><span class="o">(</span><span class="n">listOf2</span> <span class="o">-&gt;</span> <span class="o">{</span>
                 <span class="n">LivePriceEvent</span> <span class="n">lastEvent</span> <span class="o">=</span> <span class="n">listOf2</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
@@ -189,56 +294,36 @@ Reading the doc and examples of RxJava can be intimidating and quite abstract, h
 </pre></div>
 
 
-<p>you should see something like this</p>
+<p>you should see something like this </p>
 <div class="highlight"><pre>daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1<span class="nv">$ </span>foreman start
 
-16:22:37 ib.1   | started with pid 29935
-16:22:37 app.1  | started with pid 29937
-16:22:47 app.1  | Server Version:76
-16:22:47 app.1  | TWS Time at connection:20150717 16:22:44 IST
-16:22:47 app.1  | Jul 17, 2015 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> connectedTags: pelican, publishing
-Slug: my-super-post
-16:22:47 app.1  | INFO: connected
-16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
-16:22:48 app.1  | SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2119msg Market data farm is connecting:ibdemo
-16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
-16:22:48 app.1  | SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2104msg Market data farm connection is OK:ibdemo
-16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:48 app.1  | INFO: IB tick Fri Jul 17 16:22:48 IDT 2015 price 122.09
-16:22:48 app.1  | Jul 17, 2015 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:48 app.1  | INFO: IB tick Fri Jul 17 16:22:48 IDT 2015 price 122.08
-16:22:52 app.1  | Jul 17, 2015 4:22:52 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:52 app.1  | INFO: IB tick Fri Jul 17 16:22:52 IDT 2015 price 122.09
-16:22:58 app.1  | Jul 17, 2015 4:22:58 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:58 app.1  | INFO: IB tick Fri Jul 17 16:22:58 IDT 2015 price 122.08
-16:23:00 app.1  | Jul 17, 2015 4:23:00 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:23:00 app.1  | INFO: IB tick Fri Jul 17 16:23:00 IDT 2015 price 122.09
-16:23:00 app.1  | Jul 17, 2015 4:23:00 PM daniels.reactive.blog.Main lambda<span class="nv">$main$0</span>
-16:23:00 app.1  | INFO: <span class="nv">minute</span> <span class="o">=</span> 22 <span class="nv">val</span><span class="o">=</span>LiveBarEvent<span class="o">(</span><span class="nv">barDuration</span><span class="o">=</span>MINUTES, <span class="nv">createTimestamp</span><span class="o">=</span>1437139378855, <span class="nv">instrument</span><span class="o">=</span>APPL, <span class="nv">price</span><span class="o">=</span>122.080<span class="o">)</span>
+16:22:37 ib.1   <span class="p">|</span> started with pid 29935
+16:22:37 app.1  <span class="p">|</span> started with pid 29937
+16:22:47 app.1  <span class="p">|</span> Server Version:76
+16:22:47 app.1  <span class="p">|</span> TWS Time at connection:20150717 16:22:44 IST
+16:22:47 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> connected
+16:22:47 app.1  <span class="p">|</span> INFO: connected
+16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
+16:22:48 app.1  <span class="p">|</span> SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2119msg Market data farm is connecting:ibdemo
+16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
+16:22:48 app.1  <span class="p">|</span> SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2104msg Market data farm connection is OK:ibdemo
+16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:48 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:48 IDT <span class="m">2015</span> price 122.09
+16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:48 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:48 IDT <span class="m">2015</span> price 122.08
+16:22:52 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:52 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:52 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:52 IDT <span class="m">2015</span> price 122.09
+16:22:58 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:58 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:22:58 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:58 IDT <span class="m">2015</span> price 122.08
+16:23:00 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:23:00 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
+16:23:00 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:23:00 IDT <span class="m">2015</span> price 122.09
+16:23:00 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:23:00 PM daniels.reactive.blog.Main lambda<span class="nv">$main$0</span>
+16:23:00 app.1  <span class="p">|</span> INFO: <span class="nv">minute</span> <span class="o">=</span> <span class="m">22</span> <span class="nv">val</span><span class="o">=</span>LiveBarEvent<span class="o">(</span><span class="nv">barDuration</span><span class="o">=</span>MINUTES, <span class="nv">createTimestamp</span><span class="o">=</span>1437139378855, <span class="nv">instrument</span><span class="o">=</span>APPL, <span class="nv">price</span><span class="o">=</span>122.080<span class="o">)</span>
 </pre></div>
 
-
-<h3>To be continued (Part 2 taking advantage of your multicore cpu with observeOn RxJava operator )</h3>
-
                 <div class="clear"></div>
                 <div class="info">
-                    <a href="http://dsebban.github.io/blog/2015/rxjava-in-action-with-live-financial-market-data-from-ib-part-1.html">posted at 22:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/tag/java.html" class="tags">java</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/rxjava.html" class="tags">RxJava</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/finance.html" class="tags">finance</a>
-                </div>
-
-            </article>
-            <div class="clear"></div>
-            <h4 class="date">Feb 06, 2014</h4>
-            <article class="post">
-<h2 class="title">
-                    <a href="http://dsebban.github.io/blog/2014/hello.html" rel="bookmark" title="Permanent Link to &quot;Hello World&quot;">Hello World</a>
-                </h2>
-
-                <p>My <em>first</em> post using <a class="reference external" href="http://docs.getpelican.com/en/3.3.0/getting_started.html">Pelican</a>!</p>
-
-
-                <div class="clear"></div>
-                <div class="info">
-                    <a href="http://dsebban.github.io/blog/2014/hello.html">posted at 23:24</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/tag/pelican.html" class="tags">pelican</a>&nbsp;<a href="http://dsebban.github.io/blog/tag/web.html" class="tags">web</a>
+                    <a href="http://dsebban.github.io/blog/2015/java-rx-with-live-financial-market-data-from-ib.html">posted at 16:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>
                 </div>
 
             </article>
@@ -255,14 +340,5 @@ Slug: my-super-post
         </div>
         <div class="clear"></div>
     </div>
-    <script type="text/javascript">
-    var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-    document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-    </script>
-    <script type="text/javascript">
-    try {
-        var pageTracker = _gat._getTracker("UA-65283210-1");
-    pageTracker._trackPageview();
-    } catch(err) {}</script>
 </body>
 </html>

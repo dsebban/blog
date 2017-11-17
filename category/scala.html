@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Daniel Sebban's Blog &middot; Articles by Daniel Sebban</title>
+    <title>Daniel Sebban's Blog &middot; articles in the "Scala" category</title>
     <link rel="shortcut icon" type="image/png" href="http://dsebban.github.io/blog/favicon.png">
     <link rel="shortcut icon" type="image/x-icon" href="http://dsebban.github.io/blog/favicon.ico">
     <link href="http://dsebban.github.io/blog/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="Daniel Sebban's Blog Full Atom Feed" />
+    <link href="http://dsebban.github.io/blog/feeds/scala.atom.xml" type="application/atom+xml" rel="alternate" title="Daniel Sebban's Blog Categories Atom Feed" />
     <link rel="stylesheet" href="http://dsebban.github.io/blog/theme/css/screen.css" type="text/css" />
     <link rel="stylesheet" href="http://dsebban.github.io/blog/theme/css/pygments.css" type="text/css" />
     <link rel="stylesheet" href="http://dsebban.github.io/blog/theme/css/print.css" type="text/css" media="print" />
@@ -15,7 +16,7 @@
     <header>
         <nav>
 
-                <li class="ephemeral selected"><a href="http://dsebban.github.io/blog/author/daniel-sebban.html">Daniel Sebban</a></li>                <li><a href="http://dsebban.github.io/blog">Home</a></li>
+                <li class="ephemeral selected"><a href="http://dsebban.github.io/blog/category/scala.html">Scala</a></li>                <li><a href="http://dsebban.github.io/blog">Home</a></li>
                 <li><a href="http://dsebban.github.io/blog/pages/about.html">About</a></li>
                 <li><a href="http://dsebban.github.io/blog/archives.html">Archives</a></li>
         </nav>
@@ -226,105 +227,6 @@ to pay special care because this function uses or updates the state: </p>
                 <div class="clear"></div>
                 <div class="info">
                     <a href="http://dsebban.github.io/blog/2017/refactoring-to-functional-patterns-in-scala.html">posted at 09:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/scala.html" rel="tag">Scala</a>
-                </div>
-
-            </article>
-            <div class="clear"></div>
-            <h4 class="date">Jul 17, 2015</h4>
-            <article class="post">
-<h2 class="title">
-                    <a href="http://dsebban.github.io/blog/2015/java-rx-with-live-financial-market-data-from-ib.html" rel="bookmark" title="Permanent Link to &quot;Java Rx with live financial market data from IB&quot;">Java Rx with live financial market data from IB</a>
-                </h2>
-
-                <p>In one of my recent projects I automated a trading strategy using <a href="https://www.interactivebrokers.com/en/?f=%2Fen%2Fsoftware%2Fibapi.php&amp;ns=T">Iteractive Brokers</a> Java API,
- the perfect companion framework  to handle large amount if  live and historical data  is
-<a href="https://github.com/ReactiveX/RxJava">RxJava</a>. 
-Reading the doc and examples of RXJava can be intimidating and quite abstract, here is a hands on example of how to use it and what it can do:</p>
-<ul>
-<li>Hook up market data to the marketDataService Observable</li>
-<li>Aggregate tick data to 1-minute bars , using groupBy , flatmap and buffer operators</li>
-</ul>
-<h3>1. Hook up market data to the marketDataService Observable</h3>
-<div class="highlight"><pre> <span class="kd">public</span> <span class="kt">void</span> <span class="nf">subscribeRealTimeData</span><span class="o">(</span><span class="n">Instrument</span> <span class="n">instrument</span><span class="o">)</span> <span class="o">{</span>
-    <span class="n">controller</span><span class="o">.</span><span class="na">reqTopMktData</span><span class="o">(</span><span class="n">instrument</span><span class="o">.</span><span class="na">ibContract</span><span class="o">,</span> <span class="s">&quot;232&quot;</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="k">new</span> <span class="n">ApiController</span><span class="o">.</span><span class="na">ITopMktDataHandler</span><span class="o">()</span> 
-    <span class="o">{</span>
-        <span class="nd">@Override</span>
-        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">tickPrice</span><span class="o">(</span><span class="n">TickType</span> <span class="n">tickType</span><span class="o">,</span> <span class="kt">double</span> <span class="n">price</span><span class="o">,</span> <span class="kt">int</span> <span class="n">canAutoExecute</span><span class="o">)</span> <span class="o">{</span>
-
-            <span class="k">if</span> <span class="o">(</span><span class="n">tickType</span> <span class="o">==</span> <span class="n">TickType</span><span class="o">.</span><span class="na">ASK</span><span class="o">)</span> 
-            <span class="o">{</span>
-                <span class="n">log</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">&quot;IB tick &quot;</span> <span class="o">+</span> <span class="k">new</span> <span class="n">Date</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; price &quot;</span> <span class="o">+</span> <span class="n">price</span><span class="o">);</span>
-                <span class="n">LivePriceEvent</span> <span class="n">priceEvent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LivePriceEvent</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span> <span class="n">instrument</span><span class="o">,</span> <span class="k">new</span> <span class="n">BigDecimal</span><span class="o">(</span><span class="n">price</span><span class="o">).</span><span class="na">setScale</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">RoundingMode</span><span class="o">.</span><span class="na">UP</span><span class="o">));</span>
-                <span class="n">marketDataObservable</span><span class="o">.</span><span class="na">push</span><span class="o">(</span><span class="n">priceEvent</span><span class="o">);</span>
-            <span class="o">}</span>
-
-        <span class="o">}</span>
-</pre></div>
-
-
-<p>Now each time a tick arrives from IB , it will be pushed to our Obseravble . Now we can now fold the data as we want using the different opearator of RxJava Observable</p>
-<h3>2. Aggregate tick data to 1-minute bars</h3>
-<div class="highlight"><pre><span class="kd">public</span> <span class="kt">void</span> <span class="nf">aggregateLiveMinuteBar</span><span class="o">()</span> <span class="o">{</span>
-
-    <span class="n">observable</span><span class="o">().</span>
-            <span class="n">ofType</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">.</span><span class="na">class</span><span class="o">).</span> <span class="c1">//filter on live ticks</span>
-            <span class="n">groupBy</span><span class="o">(</span><span class="n">LivePriceEvent</span><span class="o">::</span><span class="n">getInstrument</span><span class="o">).</span> <span class="c1">// group by instrument i.e AAPL, GOOG</span>
-            <span class="n">flatMap</span><span class="o">(</span><span class="n">grouped</span> <span class="o">-&gt;</span> <span class="n">grouped</span><span class="o">.</span><span class="na">buffer</span><span class="o">(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">1</span><span class="o">)).</span> <span class="c1">// take each 2 consecutive events</span>
-            <span class="n">subscribe</span><span class="o">(</span><span class="n">listOf2</span> <span class="o">-&gt;</span> <span class="o">{</span>
-                <span class="n">LivePriceEvent</span> <span class="n">lastEvent</span> <span class="o">=</span> <span class="n">listOf2</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
-                <span class="kt">int</span> <span class="n">lastMinute</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DateTime</span><span class="o">(</span><span class="n">lastEvent</span><span class="o">.</span><span class="na">getCreateTimestamp</span><span class="o">()).</span><span class="na">minuteOfHour</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
-                <span class="kt">int</span> <span class="n">currentMinute</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DateTime</span><span class="o">(</span><span class="n">listOf2</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">getCreateTimestamp</span><span class="o">()).</span><span class="na">minuteOfHour</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
-        <span class="c1">//when minute is crossed , we push the result back in the observable to make it available to other subscribers</span>
-        <span class="k">if</span> <span class="o">(</span><span class="n">lastMinute</span> <span class="o">!=</span> <span class="n">currentMinute</span><span class="o">)</span> <span class="o">{</span>
-                    <span class="n">push</span><span class="o">(</span><span class="k">new</span> <span class="n">LiveBarEvent</span><span class="o">(</span><span class="n">TimeUnit</span><span class="o">.</span><span class="na">MINUTES</span><span class="o">,</span> <span class="n">lastEvent</span><span class="o">.</span><span class="na">createTimestamp</span><span class="o">,</span> <span class="n">lastEvent</span><span class="o">.</span><span class="na">getInstrument</span><span class="o">(),</span> <span class="n">lastEvent</span><span class="o">.</span><span class="na">getPrice</span><span class="o">()));</span>
-                <span class="o">}</span>
-
-    <span class="o">});</span>
-
-
-<span class="o">}</span>
-</pre></div>
-
-
-<h3>3. Running the minute bar aggregator against IB demo feed</h3>
-<p>just follow the instructions from the <a href="https://github.com/dsebban/blog-post-1">github</a></p>
-<div class="highlight"><pre><span class="nv">$ </span>git clone <span class="o">[</span>https://github.com/dsebban/blog-post-1<span class="o">]</span> rx-ib
-<span class="nv">$ </span><span class="nb">cd </span>rx-ib
-<span class="nv">$ </span>mvn package
-<span class="nv">$ </span>foreman start
-</pre></div>
-
-
-<p>you should see something like this </p>
-<div class="highlight"><pre>daniel@daniel-desktop:~/Projects/dice_bot/blog-post-1<span class="nv">$ </span>foreman start
-
-16:22:37 ib.1   <span class="p">|</span> started with pid 29935
-16:22:37 app.1  <span class="p">|</span> started with pid 29937
-16:22:47 app.1  <span class="p">|</span> Server Version:76
-16:22:47 app.1  <span class="p">|</span> TWS Time at connection:20150717 16:22:44 IST
-16:22:47 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:47 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> connected
-16:22:47 app.1  <span class="p">|</span> INFO: connected
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
-16:22:48 app.1  <span class="p">|</span> SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2119msg Market data farm is connecting:ibdemo
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$2</span> message
-16:22:48 app.1  <span class="p">|</span> SEVERE: id -1 <span class="nv">errocode</span> <span class="o">=</span> 2104msg Market data farm connection is OK:ibdemo
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:48 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:48 IDT <span class="m">2015</span> price 122.09
-16:22:48 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:48 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:48 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:48 IDT <span class="m">2015</span> price 122.08
-16:22:52 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:52 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:52 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:52 IDT <span class="m">2015</span> price 122.09
-16:22:58 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:22:58 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:22:58 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:22:58 IDT <span class="m">2015</span> price 122.08
-16:23:00 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:23:00 PM daniels.reactive.blog.InteractiveBrokersFeed<span class="nv">$1</span> tickPrice
-16:23:00 app.1  <span class="p">|</span> INFO: IB tick Fri Jul <span class="m">17</span> 16:23:00 IDT <span class="m">2015</span> price 122.09
-16:23:00 app.1  <span class="p">|</span> Jul 17, <span class="m">2015</span> 4:23:00 PM daniels.reactive.blog.Main lambda<span class="nv">$main$0</span>
-16:23:00 app.1  <span class="p">|</span> INFO: <span class="nv">minute</span> <span class="o">=</span> <span class="m">22</span> <span class="nv">val</span><span class="o">=</span>LiveBarEvent<span class="o">(</span><span class="nv">barDuration</span><span class="o">=</span>MINUTES, <span class="nv">createTimestamp</span><span class="o">=</span>1437139378855, <span class="nv">instrument</span><span class="o">=</span>APPL, <span class="nv">price</span><span class="o">=</span>122.080<span class="o">)</span>
-</pre></div>
-
-                <div class="clear"></div>
-                <div class="info">
-                    <a href="http://dsebban.github.io/blog/2015/java-rx-with-live-financial-market-data-from-ib.html">posted at 16:20</a>&nbsp;&middot;&nbsp;<a href="http://dsebban.github.io/blog/category/java.html" rel="tag">Java</a>
                 </div>
 
             </article>
